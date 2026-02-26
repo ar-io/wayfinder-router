@@ -156,10 +156,18 @@ export function createRewardExportHandler(deps: StatsHandlerDeps) {
           "gateway,total_requests,successful_requests,bytes_served,success_rate,verification_success_rate,avg_latency_ms,availability_rate",
         ];
 
+        const csvEscape = (val: string | number): string => {
+          const s = String(val);
+          if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+            return '"' + s.replace(/"/g, '""') + '"';
+          }
+          return s;
+        };
+
         for (const gw of exportData.gateways) {
           csvLines.push(
             [
-              gw.gateway,
+              csvEscape(gw.gateway),
               gw.totalRequests,
               gw.successfulRequests,
               gw.bytesServed,

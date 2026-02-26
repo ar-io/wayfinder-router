@@ -166,7 +166,7 @@ export class ArnsResolver {
     const response = await fetch(url.toString(), {
       method: "HEAD",
       signal: AbortSignal.timeout(5000),
-      redirect: "follow",
+      redirect: "error",
     });
 
     if (!response.ok) {

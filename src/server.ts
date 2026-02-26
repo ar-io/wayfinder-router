@@ -505,14 +505,25 @@ export function createServer(options: CreateServerOptions) {
     }
 
     try {
-      // Proxy the request to configured URL
+      // Read request body with size limit (1MB max for GraphQL queries)
+      let body: string | undefined;
+      if (c.req.method !== "GET") {
+        body = await c.req.text();
+        if (body.length > 1024 * 1024) {
+          return c.json({ error: "Request body too large" }, 413);
+        }
+      }
+
+      // Proxy the request to configured URL with timeout and no redirects
       const response = await fetch(config.server.graphqlProxyUrl, {
         method: c.req.method,
         headers: {
           "Content-Type": c.req.header("content-type") || "application/json",
           Accept: c.req.header("accept") || "application/json",
         },
-        body: c.req.method !== "GET" ? await c.req.text() : undefined,
+        body,
+        redirect: "error",
+        signal: AbortSignal.timeout(config.http.requestTimeoutMs),
       });
 
       // Return proxied response with upstream header

@@ -124,6 +124,7 @@ export class GatewayTemperatureCache {
    * Record a failed request to a gateway
    */
   recordFailure(gateway: string): void {
+    this.maybePruneStaleGateways();
     const temp = this.getOrCreate(gateway);
     this.cleanup(temp);
 

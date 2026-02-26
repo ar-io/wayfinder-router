@@ -498,6 +498,7 @@ export class ManifestResolver {
     const response = await fetch(url.toString(), {
       method: "HEAD",
       signal: AbortSignal.timeout(5000),
+      redirect: "error",
     });
 
     if (!response.ok) {
@@ -526,6 +527,7 @@ export class ManifestResolver {
     const response = await fetch(url.toString(), {
       method: "GET",
       signal: AbortSignal.timeout(this.fetchTimeoutMs),
+      redirect: "error",
     });
 
     if (!response.ok) {
@@ -540,7 +542,7 @@ export class ManifestResolver {
       response.headers.get("content-length") || "0",
       10,
     );
-    if (contentLength > MAX_MANIFEST_SIZE) {
+    if (Number.isNaN(contentLength) || contentLength > MAX_MANIFEST_SIZE) {
       throw new ManifestError(
         manifestTxId,
         `Manifest too large: ${contentLength} bytes (max ${MAX_MANIFEST_SIZE})`,

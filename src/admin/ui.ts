@@ -731,7 +731,7 @@ function css(): string {
 function clientJs(): string {
   return `
     const BASE = '/api';
-    let authToken = localStorage.getItem('wayfinder_admin_token') || '';
+    let authToken = sessionStorage.getItem('wayfinder_admin_token') || '';
     let currentPage = 'status';
     let statusInterval = null;
     let gatewaysInterval = null;
@@ -933,7 +933,7 @@ function clientJs(): string {
     async function doLogin() {
       const input = document.getElementById('auth-input');
       authToken = input.value.trim();
-      localStorage.setItem('wayfinder_admin_token', authToken);
+      sessionStorage.setItem('wayfinder_admin_token', authToken);
       try {
         await api('/status');
         hideAuth();
@@ -1512,7 +1512,7 @@ function clientJs(): string {
       }
 
       // Default: string
-      return '<div class="setting-field-input"><input class="form-input" type="text" id="' + id + '" value="' + val.replace(/"/g, '&quot;') + '"' +
+      return '<div class="setting-field-input"><input class="form-input" type="text" id="' + id + '" value="' + escHtml(val) + '"' +
         (field.placeholder ? ' placeholder="' + field.placeholder + '"' : '') +
         ' onchange="updateSetting(\\'' + field.key + '\\', this.value)"></div>';
     }

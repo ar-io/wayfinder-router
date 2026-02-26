@@ -683,6 +683,26 @@ export function validateConfig(config: RouterConfig): void {
     }
   }
 
+  // === GRAPHQL PROXY VALIDATION ===
+
+  if (config.server.graphqlProxyUrl) {
+    try {
+      const gqlUrl = new URL(config.server.graphqlProxyUrl);
+      if (gqlUrl.protocol !== "https:" && gqlUrl.protocol !== "http:") {
+        throw new Error(
+          `GRAPHQL_PROXY_URL must use http or https scheme, got: ${gqlUrl.protocol}`,
+        );
+      }
+    } catch (e) {
+      if (e instanceof TypeError) {
+        throw new Error(
+          `GRAPHQL_PROXY_URL is not a valid URL: ${config.server.graphqlProxyUrl}`,
+        );
+      }
+      throw e;
+    }
+  }
+
   // === ADMIN UI VALIDATION ===
 
   if (config.admin.enabled) {

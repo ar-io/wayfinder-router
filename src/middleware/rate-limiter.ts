@@ -54,10 +54,10 @@ const store = new RateLimitStore();
 
 /**
  * Extract client IP from request
- * Handles common proxy headers
+ * Handles common proxy headers, falls back to socket IP
  */
 function getClientIp(c: Context): string {
-  // Check common proxy headers
+  // Check common proxy headers (only trustworthy behind a reverse proxy)
   const xForwardedFor = c.req.header("x-forwarded-for");
   if (xForwardedFor) {
     // Take the first IP in the chain (original client)
@@ -69,9 +69,16 @@ function getClientIp(c: Context): string {
     return xRealIp.trim();
   }
 
-  // Fall back to direct connection IP
-  // Note: This may not work correctly behind a proxy
-  return "unknown";
+  // Fall back to socket IP via Bun.Server.requestIP()
+  const srv = c.env?.server;
+  if (srv && typeof srv.requestIP === "function") {
+    const addr = srv.requestIP(c.req.raw);
+    if (addr) {
+      return addr.address;
+    }
+  }
+
+  return "0.0.0.0";
 }
 
 /**

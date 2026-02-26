@@ -185,7 +185,9 @@ async function main() {
   // The temperature cache works fine without ping data (uses default scores)
   // and will improve as ping data populates in the background
   const server = Bun.serve({
-    fetch: app.fetch,
+    fetch(req, srv) {
+      return app.fetch(req, { server: srv });
+    },
     port: config.server.port,
     hostname: config.server.host,
   });

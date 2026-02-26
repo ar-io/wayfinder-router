@@ -108,8 +108,8 @@ export class TelemetryService {
   private updateCounters(event: GatewayRequestEvent): void {
     const gateway = event.gateway;
 
-    // Request counter by status
-    const statusKey = `${gateway}:${event.outcome}`;
+    // Request counter by status (use \0 delimiter to avoid collision with URL colons)
+    const statusKey = `${gateway}\0${event.outcome}`;
     this.counters.requests.set(
       statusKey,
       (this.counters.requests.get(statusKey) || 0) + 1,
@@ -117,7 +117,7 @@ export class TelemetryService {
 
     // Verification counter
     if (event.verification) {
-      const verifyKey = `${gateway}:${event.verification.outcome}`;
+      const verifyKey = `${gateway}\0${event.verification.outcome}`;
       this.counters.verifications.set(
         verifyKey,
         (this.counters.verifications.get(verifyKey) || 0) + 1,
@@ -149,15 +149,21 @@ export class TelemetryService {
   getPrometheusMetrics(): string {
     const lines: string[] = [];
 
+    // Escape label values per Prometheus exposition format
+    const escLabel = (s: string): string =>
+      s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+
     // Gateway request counters
     lines.push(
       "# HELP wayfinder_gateway_requests_total Total requests per gateway",
     );
     lines.push("# TYPE wayfinder_gateway_requests_total counter");
     for (const [key, count] of this.counters.requests) {
-      const [gateway, outcome] = key.split(":");
+      const sepIdx = key.lastIndexOf("\0");
+      const gateway = key.substring(0, sepIdx);
+      const outcome = key.substring(sepIdx + 1);
       lines.push(
-        `wayfinder_gateway_requests_total{gateway="${gateway}",outcome="${outcome}"} ${count}`,
+        `wayfinder_gateway_requests_total{gateway="${escLabel(gateway)}",outcome="${escLabel(outcome)}"} ${count}`,
       );
     }
     lines.push("");
@@ -168,9 +174,11 @@ export class TelemetryService {
     );
     lines.push("# TYPE wayfinder_gateway_verifications_total counter");
     for (const [key, count] of this.counters.verifications) {
-      const [gateway, outcome] = key.split(":");
+      const sepIdx = key.lastIndexOf("\0");
+      const gateway = key.substring(0, sepIdx);
+      const outcome = key.substring(sepIdx + 1);
       lines.push(
-        `wayfinder_gateway_verifications_total{gateway="${gateway}",outcome="${outcome}"} ${count}`,
+        `wayfinder_gateway_verifications_total{gateway="${escLabel(gateway)}",outcome="${escLabel(outcome)}"} ${count}`,
       );
     }
     lines.push("");
@@ -182,7 +190,7 @@ export class TelemetryService {
     lines.push("# TYPE wayfinder_gateway_latency_seconds_sum counter");
     for (const [gateway, sum] of this.counters.latencySum) {
       lines.push(
-        `wayfinder_gateway_latency_seconds_sum{gateway="${gateway}"} ${sum / 1000}`,
+        `wayfinder_gateway_latency_seconds_sum{gateway="${escLabel(gateway)}"} ${sum / 1000}`,
       );
     }
     lines.push("");
@@ -193,7 +201,7 @@ export class TelemetryService {
     lines.push("# TYPE wayfinder_gateway_latency_seconds_count counter");
     for (const [gateway, count] of this.counters.latencyCount) {
       lines.push(
-        `wayfinder_gateway_latency_seconds_count{gateway="${gateway}"} ${count}`,
+        `wayfinder_gateway_latency_seconds_count{gateway="${escLabel(gateway)}"} ${count}`,
       );
     }
     lines.push("");
@@ -205,7 +213,7 @@ export class TelemetryService {
     lines.push("# TYPE wayfinder_gateway_bytes_served_total counter");
     for (const [gateway, bytes] of this.counters.bytesServed) {
       lines.push(
-        `wayfinder_gateway_bytes_served_total{gateway="${gateway}"} ${bytes}`,
+        `wayfinder_gateway_bytes_served_total{gateway="${escLabel(gateway)}"} ${bytes}`,
       );
     }
     lines.push("");

@@ -68,7 +68,7 @@ export function createArweaveApiProxyHandler(deps: ArweaveApiHandlerDeps) {
         telemetryService.recordRequest({
           traceId,
           timestamp: startTime,
-          gateway: result.node.toString(),
+          gateway: result.node.origin,
           requestType: "arweave-api",
           identifier: endpoint,
           path,
@@ -187,7 +187,7 @@ export function createArweaveApiRouteHandler(deps: ArweaveApiHandlerDeps) {
         telemetryService.recordRequest({
           traceId,
           timestamp: startTime,
-          gateway: node.toString(),
+          gateway: node.origin,
           requestType: "arweave-api",
           identifier: endpoint,
           path,

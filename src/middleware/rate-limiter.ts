@@ -109,7 +109,11 @@ export function createRateLimitMiddleware(config: RouterConfig) {
 
     // Skip rate limiting for health check endpoints
     const path = new URL(c.req.url).pathname;
-    if (path === "/health" || path === "/ready" || path === "/metrics") {
+    if (
+      path === "/wayfinder/health" ||
+      path === "/wayfinder/ready" ||
+      path === "/wayfinder/metrics"
+    ) {
       return next();
     }
 

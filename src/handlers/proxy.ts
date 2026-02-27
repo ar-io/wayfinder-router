@@ -108,10 +108,10 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
     gatewaySelector?.recordVerificationFailure(gateway);
 
     // Record in temperature cache for routing decisions
-    temperatureCache?.recordFailure(gateway.toString());
+    temperatureCache?.recordFailure(gateway.origin);
 
     logger.warn("Recorded verification failure for gateway", {
-      gateway: gateway.toString(),
+      gateway: gateway.origin,
     });
   }
 
@@ -142,10 +142,10 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
 
       logger.info("Attempting verification", {
         requestedTxId,
-        gateway: gateway.toString(),
+        gateway: gateway.origin,
         attempt: attempt + 1,
         maxAttempts,
-        previouslyFailed: failedGateways.map((g) => g.toString()),
+        previouslyFailed: failedGateways.map((g) => g.origin),
         traceId,
       });
 
@@ -256,7 +256,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
         logger.info("Verification succeeded", {
           contentTxId,
           manifestTxId,
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           attempt: attempt + 1,
           verificationTimeMs: verificationResult.durationMs,
           traceId,
@@ -279,7 +279,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
 
         logger.warn("Verification failed, will retry with different gateway", {
           requestedTxId,
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           attempt: attempt + 1,
           maxAttempts,
           remainingAttempts: maxAttempts - attempt - 1,
@@ -302,7 +302,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
       requestedTxId,
       path,
       attempts: attempts.map((a) => ({
-        gateway: a.gateway.toString(),
+        gateway: a.gateway.origin,
         error: a.error,
       })),
       traceId,
@@ -479,7 +479,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
       addWayfinderHeaders(result.headers, {
         mode: "proxy",
         verified: true,
-        routedVia: result.gateway.toString(),
+        routedVia: result.gateway.origin,
         verifiedBy: result.verificationResult.verifiedByGateways,
         txId: result.contentTxId,
         verificationTimeMs: result.verificationResult.durationMs,
@@ -493,7 +493,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
         arnsName,
         contentTxId: result.contentTxId,
         manifestTxId: result.manifestTxId,
-        gateway: result.gateway.toString(),
+        gateway: result.gateway.origin,
         verified: true,
         verificationTimeMs: result.verificationResult.durationMs,
         totalDurationMs: Date.now() - startTime,
@@ -503,7 +503,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
       // Record successful telemetry
       recordTelemetryWithVerification({
         traceId,
-        gateway: result.gateway.toString(),
+        gateway: result.gateway.origin,
         requestType: "arns",
         identifier: arnsName,
         path,
@@ -535,14 +535,14 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
     addWayfinderHeaders(headers, {
       mode: "proxy",
       verified: false,
-      routedVia: gateway.toString(),
+      routedVia: gateway.origin,
       txId,
     });
 
     logger.info("ArNS proxy request completed (unverified)", {
       arnsName,
       txId,
-      gateway: gateway.toString(),
+      gateway: gateway.origin,
       durationMs: Date.now() - startTime,
       traceId,
     });
@@ -550,7 +550,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
     // Record telemetry
     recordTelemetry({
       traceId,
-      gateway: gateway.toString(),
+      gateway: gateway.origin,
       requestType: "arns",
       identifier: arnsName,
       path,
@@ -784,7 +784,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
       addWayfinderHeaders(result.headers, {
         mode: "proxy",
         verified: true,
-        routedVia: result.gateway.toString(),
+        routedVia: result.gateway.origin,
         verifiedBy: result.verificationResult.verifiedByGateways,
         txId: result.contentTxId,
         verificationTimeMs: result.verificationResult.durationMs,
@@ -798,7 +798,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
         txId,
         contentTxId: result.contentTxId,
         manifestTxId: result.manifestTxId,
-        gateway: result.gateway.toString(),
+        gateway: result.gateway.origin,
         verified: true,
         verificationTimeMs: result.verificationResult.durationMs,
         totalDurationMs: Date.now() - startTime,
@@ -808,7 +808,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
       // Record successful telemetry
       recordTelemetryWithVerification({
         traceId,
-        gateway: result.gateway.toString(),
+        gateway: result.gateway.origin,
         requestType: "txid",
         identifier: txId,
         path,
@@ -839,13 +839,13 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
     addWayfinderHeaders(headers, {
       mode: "proxy",
       verified: false,
-      routedVia: gateway.toString(),
+      routedVia: gateway.origin,
       txId,
     });
 
     logger.info("TxId proxy request completed (unverified)", {
       txId,
-      gateway: gateway.toString(),
+      gateway: gateway.origin,
       durationMs: Date.now() - startTime,
       traceId,
     });
@@ -853,7 +853,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
     // Record telemetry
     recordTelemetry({
       traceId,
-      gateway: gateway.toString(),
+      gateway: gateway.origin,
       requestType: "txid",
       identifier: txId,
       path,

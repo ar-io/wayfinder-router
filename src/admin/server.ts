@@ -4,7 +4,7 @@
  * Bound to 127.0.0.1 by default (localhost-only access).
  */
 
-import { timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Logger, RouterConfig } from "../types/index.js";
@@ -14,11 +14,14 @@ import packageJson from "../../package.json" with { type: "json" };
 
 const ROUTER_VERSION: string = packageJson.version;
 
-/** Constant-time string comparison to prevent timing attacks */
+/** Constant-time string comparison to prevent timing attacks.
+ *  Uses HMAC so both sides are always the same length,
+ *  avoiding any early-exit that could leak the token length. */
 function safeCompare(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  return timingSafeEqual(bufA, bufB);
+  const key = "wayfinder-auth";
+  const ha = createHmac("sha256", key).update(a).digest();
+  const hb = createHmac("sha256", key).update(b).digest();
+  return timingSafeEqual(ha, hb);
 }
 
 export interface AdminServerOptions {
@@ -49,34 +52,33 @@ export function createAdminServer(options: AdminServerOptions) {
         c.req.header("x-forwarded-for")?.split(",")[0].trim() || "unknown";
       const now = Date.now();
 
-      // Check if IP is temporarily blocked (5 failures = 60s lockout)
+      const authHeader = c.req.header("Authorization");
+      const token = authHeader?.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : null;
+      const validToken = !!token && safeCompare(token, expectedToken);
+
+      if (validToken) {
+        // Valid token always gets through; clear any failures
+        authFailures.delete(ip);
+        return next();
+      }
+
+      // Invalid token — check if IP is temporarily blocked
       const failure = authFailures.get(ip);
       if (failure && failure.blockedUntil > now) {
         return c.json({ error: "Too many auth attempts" }, 429);
       }
 
-      const authHeader = c.req.header("Authorization");
-      const token = authHeader?.startsWith("Bearer ")
-        ? authHeader.slice(7)
-        : null;
-      if (
-        !token ||
-        token.length !== expectedToken.length ||
-        !safeCompare(token, expectedToken)
-      ) {
-        const f = authFailures.get(ip) || { count: 0, blockedUntil: 0 };
-        f.count++;
-        if (f.count >= 5) {
-          f.blockedUntil = now + 60_000;
-          f.count = 0;
-        }
-        authFailures.set(ip, f);
-        return c.json({ error: "Unauthorized" }, 401);
+      // Record failure
+      const f = failure || { count: 0, blockedUntil: 0 };
+      f.count++;
+      if (f.count >= 5) {
+        f.blockedUntil = now + 60_000;
+        f.count = 0;
       }
-
-      // Clear failures on success
-      authFailures.delete(ip);
-      return next();
+      authFailures.set(ip, f);
+      return c.json({ error: "Unauthorized" }, 401);
     });
   }
 

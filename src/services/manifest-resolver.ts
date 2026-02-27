@@ -325,7 +325,7 @@ export class ManifestResolver {
 
         this.logger.info("Manifest fetched and verified", {
           manifestTxId,
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           pathCount: Object.keys(manifest.paths).length,
           hasIndex: !!manifest.index,
           verifiedBy: verificationResult.verifiedBy,
@@ -342,7 +342,7 @@ export class ManifestResolver {
           error instanceof Error ? error.message : String(error);
         this.logger.warn("Failed to fetch manifest from gateway", {
           manifestTxId,
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           error: errorMessage,
         });
         // Re-throw to let Promise.any() handle it
@@ -423,15 +423,11 @@ export class ManifestResolver {
 
       if (computedHash !== expectedHash) {
         // Hash mismatch is a security concern - mark it specially
-        throw new HashMismatchError(
-          gateway.toString(),
-          computedHash,
-          expectedHash,
-        );
+        throw new HashMismatchError(gateway.origin, computedHash, expectedHash);
       }
 
       // Hash matches!
-      return { verified: true as const, verifiedBy: gateway.toString() };
+      return { verified: true as const, verifiedBy: gateway.origin };
     });
 
     // Use Promise.allSettled to check for hash mismatches vs network failures

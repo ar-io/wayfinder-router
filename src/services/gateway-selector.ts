@@ -137,7 +137,7 @@ export class GatewaySelector {
         });
 
         this.logger.debug("Gateway selected", {
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           attempt: attempt + 1,
         });
 

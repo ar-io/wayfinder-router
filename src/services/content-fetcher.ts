@@ -130,7 +130,7 @@ export class ContentFetcher {
         });
 
         this.logger.debug("Fetching from gateway", {
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           gatewayUrl: gatewayUrl.toString(),
           txId,
           attempt: attempt + 1,
@@ -159,7 +159,7 @@ export class ContentFetcher {
 
         if (!response.ok) {
           throw new GatewayError(
-            gateway.toString(),
+            gateway.origin,
             `Gateway returned ${response.status}: ${response.statusText}`,
             response.status,
           );
@@ -172,13 +172,13 @@ export class ContentFetcher {
         this.gatewaySelector.markHealthy(gateway);
 
         // Record temperature (latency) for performance tracking
-        this.temperatureCache?.recordSuccess(gateway.toString(), latencyMs);
+        this.temperatureCache?.recordSuccess(gateway.origin, latencyMs);
 
         // Filter response headers
         const filteredHeaders = filterGatewayResponseHeaders(response.headers);
 
         this.logger.debug("Content fetched successfully", {
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           txId,
           latencyMs,
           contentType: response.headers.get("content-type"),
@@ -196,12 +196,12 @@ export class ContentFetcher {
         // Record failure for the gateway
         if (lastGateway) {
           this.gatewaySelector.recordFailure(lastGateway);
-          this.temperatureCache?.recordFailure(lastGateway.toString());
+          this.temperatureCache?.recordFailure(lastGateway.origin);
         }
 
         this.logger.warn("Fetch attempt failed", {
           txId,
-          gateway: lastGateway?.toString(),
+          gateway: lastGateway?.origin,
           attempt: attempt + 1,
           maxAttempts: this.retryAttempts,
           error: lastError.message,
@@ -218,7 +218,7 @@ export class ContentFetcher {
     throw (
       lastError ||
       new GatewayError(
-        lastGateway?.toString() || "unknown",
+        lastGateway?.origin || "unknown",
         "All fetch attempts failed",
       )
     );
@@ -263,7 +263,7 @@ export class ContentFetcher {
         });
 
         this.logger.debug("Fetching ArNS content from gateway", {
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           gatewayUrl: gatewayUrl.toString(),
           arnsName,
           resolvedTxId,
@@ -293,7 +293,7 @@ export class ContentFetcher {
 
         if (!response.ok) {
           throw new GatewayError(
-            gateway.toString(),
+            gateway.origin,
             `Gateway returned ${response.status}: ${response.statusText}`,
             response.status,
           );
@@ -306,13 +306,13 @@ export class ContentFetcher {
         this.gatewaySelector.markHealthy(gateway);
 
         // Record temperature (latency) for performance tracking
-        this.temperatureCache?.recordSuccess(gateway.toString(), latencyMs);
+        this.temperatureCache?.recordSuccess(gateway.origin, latencyMs);
 
         // Filter response headers
         const filteredHeaders = filterGatewayResponseHeaders(response.headers);
 
         this.logger.debug("ArNS content fetched successfully", {
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           arnsName,
           resolvedTxId,
           latencyMs,
@@ -330,12 +330,12 @@ export class ContentFetcher {
         // Record failure for the gateway
         if (lastGateway) {
           this.gatewaySelector.recordFailure(lastGateway);
-          this.temperatureCache?.recordFailure(lastGateway.toString());
+          this.temperatureCache?.recordFailure(lastGateway.origin);
         }
 
         this.logger.warn("ArNS fetch attempt failed", {
           arnsName,
-          gateway: lastGateway?.toString(),
+          gateway: lastGateway?.origin,
           attempt: attempt + 1,
           maxAttempts: this.retryAttempts,
           error: lastError.message,
@@ -352,7 +352,7 @@ export class ContentFetcher {
     throw (
       lastError ||
       new GatewayError(
-        lastGateway?.toString() || "unknown",
+        lastGateway?.origin || "unknown",
         "All ArNS fetch attempts failed",
       )
     );

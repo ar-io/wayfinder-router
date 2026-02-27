@@ -93,7 +93,7 @@ export function createRouteHandler(deps: RouteHandlerDeps) {
     logger.info("ArNS route redirect", {
       arnsName,
       txId: resolution.txId,
-      gateway: gateway.toString(),
+      gateway: gateway.origin,
       redirectUrl: redirectUrl.toString(),
       durationMs: Date.now() - startTime,
       traceId,
@@ -104,7 +104,7 @@ export function createRouteHandler(deps: RouteHandlerDeps) {
       telemetryService.recordRequest({
         traceId,
         timestamp: startTime,
-        gateway: gateway.toString(),
+        gateway: gateway.origin,
         requestType: "arns",
         identifier: arnsName,
         path,
@@ -170,7 +170,7 @@ export function createRouteHandler(deps: RouteHandlerDeps) {
 
     logger.info("TxId route redirect", {
       txId,
-      gateway: gateway.toString(),
+      gateway: gateway.origin,
       redirectUrl: redirectUrl.toString(),
       sandbox: sandboxFromTxId(txId),
       durationMs: Date.now() - startTime,
@@ -182,7 +182,7 @@ export function createRouteHandler(deps: RouteHandlerDeps) {
       telemetryService.recordRequest({
         traceId,
         timestamp: startTime,
-        gateway: gateway.toString(),
+        gateway: gateway.origin,
         requestType: "txid",
         identifier: txId,
         path,

@@ -329,7 +329,7 @@ export class GatewayPingService {
 
       if (response.ok) {
         const latencyMs = Date.now() - startTime;
-        this.temperatureCache.recordPing(gateway.url.toString(), latencyMs);
+        this.temperatureCache.recordPing(gateway.url.origin, latencyMs);
         // Mark gateway as healthy in circuit breaker
         this.gatewaySelector.markHealthy(gateway.url);
 
@@ -342,7 +342,7 @@ export class GatewayPingService {
       } else {
         // Non-200 response - record failure to both circuit breaker and temperature cache
         this.gatewaySelector.recordFailure(gateway.url);
-        this.temperatureCache.recordFailure(gateway.url.toString());
+        this.temperatureCache.recordFailure(gateway.url.origin);
         this.logger.debug("Gateway ping failed (non-200)", {
           gateway: gateway.fqdn,
           status: response.status,
@@ -352,7 +352,7 @@ export class GatewayPingService {
     } catch (error) {
       // Ping failed - record failure to both circuit breaker and temperature cache
       this.gatewaySelector.recordFailure(gateway.url);
-      this.temperatureCache.recordFailure(gateway.url.toString());
+      this.temperatureCache.recordFailure(gateway.url.origin);
       this.logger.debug("Gateway ping failed", {
         gateway: gateway.fqdn,
         error: error instanceof Error ? error.message : String(error),

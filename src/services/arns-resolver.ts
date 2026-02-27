@@ -130,12 +130,12 @@ export class ArnsResolver {
         return await this.queryGateway(gateway, arnsName);
       } catch (error) {
         this.logger.warn("Gateway ArNS query failed", {
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           arnsName,
           error: error instanceof Error ? error.message : String(error),
         });
         return {
-          gateway: gateway.toString(),
+          gateway: gateway.origin,
           txId: null,
           ttlSeconds: null,
           processId: null,
@@ -180,7 +180,7 @@ export class ArnsResolver {
     }
 
     return {
-      gateway: gateway.toString(),
+      gateway: gateway.origin,
       txId,
       ttlSeconds,
       processId,

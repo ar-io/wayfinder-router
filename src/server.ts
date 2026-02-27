@@ -403,6 +403,9 @@ export function createServer(options: CreateServerOptions) {
   app.get("/wayfinder/health", createHealthHandler(healthDeps));
   app.get("/wayfinder/ready", createReadyHandler(healthDeps));
 
+  // Alias for ar-io gateway compatibility (API Guard health-checks this path)
+  app.get("/ar-io/healthcheck", createHealthHandler(healthDeps));
+
   // Metrics endpoint (enhanced with telemetry and cache metrics)
   const baseMetricsHandler = createMetricsHandler(healthDeps);
   app.get("/wayfinder/metrics", async (c) => {

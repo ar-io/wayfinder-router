@@ -18,7 +18,7 @@ const RESERVED_PATHS = new Set(["favicon.ico", "graphql"]);
 
 // Reserved path prefixes - paths starting with these are always reserved
 // All router endpoints are under /wayfinder/ (health, ready, metrics, stats, info)
-const RESERVED_PREFIXES = ["wayfinder/"];
+const RESERVED_PREFIXES = ["wayfinder/", "ar-io/"];
 
 /**
  * Check if a path is reserved (should be handled by the router, not proxied)

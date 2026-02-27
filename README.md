@@ -144,6 +144,7 @@ The wizard generates a `.env` configuration file that can be copied to clipboard
 | `ADMIN_PORT`      | `3001`      | Admin server port (separate from public)                       |
 | `ADMIN_HOST`      | `127.0.0.1` | Admin bind address (`127.0.0.1` = localhost only)              |
 | `ADMIN_TOKEN`     | _(empty)_   | Bearer token for auth (required when `ADMIN_HOST` is not localhost) |
+| `ADMIN_OPEN_BROWSER` | `true`   | Auto-open admin UI in browser on startup (skipped in CI/Docker/non-TTY) |
 
 ### Remote Access
 
@@ -465,6 +466,7 @@ Admin UI endpoints (admin port, default 3001):
 | `GET /api/config`      | Current configuration (sanitized)    |
 | `GET /api/moderation`  | Moderation status and blocklist      |
 | `POST /api/config/save`| Save .env file                       |
+| `POST /api/restart`    | Validate config and restart router   |
 
 When `ROOT_HOST_CONTENT` is not set, the root endpoint (`/`) displays router info.
 

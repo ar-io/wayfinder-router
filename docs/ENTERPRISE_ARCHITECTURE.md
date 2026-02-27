@@ -237,12 +237,12 @@ Automated checks flag suspicious patterns:
 #### CLI Operations
 
 ```bash
-npm run rewards:calculate           # Calculate yesterday's rewards
-npm run rewards:list                # List all periods
-npm run rewards preview <id>        # Preview distribution
-npm run rewards fraud-check <id>    # Run fraud detection
-npm run rewards approve <id>        # Approve for distribution
-npm run rewards distribute <id>     # Execute token transfers
+bun run rewards:calculate           # Calculate yesterday's rewards
+bun run rewards:list                # List all periods
+bun run rewards preview <id>        # Preview distribution
+bun run rewards fraud-check <id>    # Run fraud detection
+bun run rewards approve <id>        # Approve for distribution
+bun run rewards distribute <id>     # Execute token transfers
 ```
 
 #### Enterprise Benefits
@@ -1143,26 +1143,26 @@ targets:
 
 ```dockerfile
 # Production Dockerfile
-FROM node:20-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY dist/ ./dist/
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile --production
 
-FROM node:20-alpine AS runtime
+FROM oven/bun:1-alpine AS runner
 RUN addgroup -g 1001 wayfinder && \
     adduser -u 1001 -G wayfinder -s /bin/sh -D wayfinder
 WORKDIR /app
 COPY --from=builder --chown=wayfinder:wayfinder /app ./
+COPY --chown=wayfinder:wayfinder src/ ./src/
 
 USER wayfinder
-EXPOSE 3000
+EXPOSE 3000 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/wayfinder/ready || exit 1
 
-CMD ["node", "dist/index.js"]
+CMD ["bun", "src/index.ts"]
 ```
 
 #### 8.1.2 Resource Limits

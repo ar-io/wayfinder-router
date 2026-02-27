@@ -732,7 +732,7 @@ The router supports blocking content for compliance purposes.
 | NFR-6.1 | Router MUST run on Linux x64 and arm64 | P0 |
 | NFR-6.2 | Router MUST be available as Docker image | P0 |
 | NFR-6.3 | Router SHOULD run on Windows and macOS | P2 |
-| NFR-6.4 | Router MUST support Node.js 20+ | P0 |
+| NFR-6.4 | Router MUST support Bun >= 1.0.0 | P0 |
 
 ---
 

@@ -10,6 +10,7 @@ import { createServer } from "./server.js";
 import { createAdminServer } from "./admin/server.js";
 import type { Logger, RouterConfig } from "./types/index.js";
 import { createShutdownManager } from "./utils/shutdown-manager.js";
+import { openInBrowser } from "./utils/open-browser.js";
 
 /**
  * Create pino logger with configuration
@@ -192,18 +193,43 @@ async function main() {
     hostname: config.server.host,
   });
 
+  const displayHost = (host: string) =>
+    host === "0.0.0.0" || host === "::" ? "localhost" : host;
+
   logger.info("Wayfinder Router started", {
-    url: `http://${config.server.host}:${config.server.port}`,
+    url: `http://${displayHost(config.server.host)}:${config.server.port}`,
   });
 
   // Start admin UI server on separate port (localhost-only by default)
   let adminServer: ReturnType<typeof Bun.serve> | null = null;
   if (config.admin.enabled) {
+    const restartFn = () => {
+      logger.info("Restart requested via admin UI");
+      try {
+        const proc = Bun.spawn([process.execPath, ...process.argv.slice(1)], {
+          stdio: ["inherit", "inherit", "inherit"],
+        });
+        proc.unref();
+      } catch (e) {
+        logger.warn("Could not spawn replacement, relying on process manager", {
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+      // Tear down
+      if (adminServer) adminServer.stop();
+      if (services.pingService) services.pingService.stop();
+      if (services.networkGatewayManager) services.networkGatewayManager.stop();
+      if (services.telemetryService) services.telemetryService.stop();
+      server.stop();
+      process.exit(0);
+    };
+
     const { app: adminApp } = createAdminServer({
       config,
       logger,
       services,
       startTime,
+      onRestart: restartFn,
     });
 
     adminServer = Bun.serve({
@@ -213,8 +239,12 @@ async function main() {
     });
 
     logger.info("Admin UI started", {
-      url: `http://${config.admin.host}:${config.admin.port}`,
+      url: `http://${displayHost(config.admin.host)}:${config.admin.port}`,
     });
+
+    if (config.admin.openBrowser) {
+      openInBrowser(`http://localhost:${config.admin.port}`, logger);
+    }
   }
 
   // Initialize ping service in background (non-blocking)

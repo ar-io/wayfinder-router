@@ -295,6 +295,8 @@ export interface RouterConfig {
     host: string;
     /** Token for admin UI authentication (required when host is not localhost) */
     token: string;
+    /** Auto-open admin UI in browser on startup */
+    openBrowser: boolean;
   };
 }
 

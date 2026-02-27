@@ -2,6 +2,7 @@
  * Configuration management for Wayfinder Router
  */
 
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type {
   RouterConfig,
@@ -321,6 +322,7 @@ export function loadConfig(): RouterConfig {
       port: getEnvInt("ADMIN_PORT", 3001),
       host: getEnv("ADMIN_HOST", "127.0.0.1"),
       token: getEnv("ADMIN_TOKEN", ""),
+      openBrowser: getEnvBool("ADMIN_OPEN_BROWSER", true),
     },
   };
 }
@@ -723,6 +725,68 @@ export function validateConfig(config: RouterConfig): void {
         `ADMIN_PORT (${config.admin.port}) must be different from PORT (${config.server.port}). ` +
           "The admin UI runs on a separate port for security.",
       );
+    }
+  }
+}
+
+/**
+ * Validate a .env file by loading it into a temporary env overlay,
+ * running loadConfig() + validateConfig(), then restoring the original env.
+ */
+export function validateEnvFile(): { valid: boolean; error?: string } {
+  const envPath = resolve(process.cwd(), ".env");
+
+  let content: string;
+  try {
+    content = readFileSync(envPath, "utf-8");
+  } catch {
+    // No .env file is valid — will use defaults
+    return { valid: true };
+  }
+
+  // Parse .env file
+  const parsed: Record<string, string> = {};
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eqIndex = trimmed.indexOf("=");
+    if (eqIndex <= 0) continue;
+    const key = trimmed.substring(0, eqIndex).trim();
+    let value = trimmed.substring(eqIndex + 1).trim();
+    // Strip surrounding quotes
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    parsed[key] = value;
+  }
+
+  // Snapshot and overlay
+  const snapshot: Record<string, string | undefined> = {};
+  for (const key of Object.keys(parsed)) {
+    snapshot[key] = process.env[key];
+    process.env[key] = parsed[key];
+  }
+
+  try {
+    const config = loadConfig();
+    validateConfig(config);
+    return { valid: true };
+  } catch (err) {
+    return {
+      valid: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  } finally {
+    // Restore original env
+    for (const [key, original] of Object.entries(snapshot)) {
+      if (original === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = original;
+      }
     }
   }
 }

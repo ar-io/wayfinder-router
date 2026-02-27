@@ -7,11 +7,15 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import type { AdminDeps } from "./types.js";
 import { renderAdminPage } from "./ui.js";
+import { validateEnvFile } from "../config.js";
 
 function getTimeRange(range: string): { startHour: string; endHour: string } {
   const now = new Date();
+
+  // End = start of the NEXT hour so the current hour is included
   const end = new Date(now);
   end.setMinutes(0, 0, 0);
+  end.setHours(end.getHours() + 1);
 
   const start = new Date(end);
   switch (range) {
@@ -150,6 +154,9 @@ export function createAdminRoutes(deps: AdminDeps): Hono {
     if (!deps.telemetryService) {
       return c.json({ enabled: false });
     }
+
+    // Flush any buffered events so the query sees the latest data
+    deps.telemetryService.flush();
 
     const range = getTimeRange((c.req.query("range") as string) || "24h");
     const stats = deps.telemetryService.getGatewayStats(
@@ -510,6 +517,23 @@ export function createAdminRoutes(deps: AdminDeps): Hono {
       });
       return c.json({ error: "Failed to write .env file" }, 500);
     }
+  });
+
+  // Restart API - validate config and restart the router process
+  admin.post("/api/restart", async (c: Context) => {
+    if (!deps.onRestart) {
+      return c.json({ ok: false, error: "Restart not supported" }, 501);
+    }
+
+    const result = validateEnvFile();
+    if (!result.valid) {
+      return c.json({ ok: false, error: result.error }, 400);
+    }
+
+    // Respond before restarting so the client receives the response
+    setTimeout(() => deps.onRestart?.(), 500);
+
+    return c.json({ ok: true, restarting: true });
   });
 
   return admin;

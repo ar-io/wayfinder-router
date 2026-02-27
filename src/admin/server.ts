@@ -29,6 +29,7 @@ export interface AdminServerOptions {
   logger: Logger;
   services: RouterServices;
   startTime: number;
+  onRestart?: () => void;
 }
 
 export function createAdminServer(options: AdminServerOptions) {
@@ -94,6 +95,7 @@ export function createAdminServer(options: AdminServerOptions) {
     pingService: services.pingService,
     blocklistService: services.blocklistService,
     wayfinderServices: services.wayfinderServices,
+    onRestart: options.onRestart,
   });
 
   app.route("/", adminRoutes);

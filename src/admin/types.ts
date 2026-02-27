@@ -21,6 +21,7 @@ export interface AdminDeps {
   pingService: GatewayPingService | null;
   blocklistService: BlocklistService | null;
   wayfinderServices: WayfinderServices;
+  onRestart?: () => void;
 }
 
 export interface AdminConfig {

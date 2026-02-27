@@ -622,7 +622,57 @@ function css(): string {
       font-weight: 600;
       display: none;
     }
-    .restart-banner.visible { display: block; }
+    .restart-banner.visible { display: flex; align-items: center; gap: 12px; }
+    .restart-banner .btn-restart {
+      margin-left: auto;
+      background: var(--warning);
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .restart-banner .btn-restart:hover { opacity: 0.9; }
+
+    /* Restart overlay */
+    .restart-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .restart-overlay-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      max-width: 360px;
+    }
+    .restart-overlay-content h3 {
+      margin-top: 16px;
+      font-size: 18px;
+    }
+    .restart-overlay-content p {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
 
     /* Responsive */
     @media (max-width: 768px) {
@@ -1474,6 +1524,55 @@ function clientJs(): string {
       }
     }
 
+    async function restartRouter() {
+      if (!confirm('Restart the router now? In-flight requests will be drained.')) return;
+      try {
+        const res = await api('/restart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        if (!res.ok) {
+          toast(res.error || 'Restart failed', 'error');
+          return;
+        }
+        showRestartOverlay();
+      } catch(e) {
+        toast(e.message || 'Restart failed', 'error');
+      }
+    }
+
+    function showRestartOverlay() {
+      const overlay = document.createElement('div');
+      overlay.className = 'restart-overlay';
+      overlay.innerHTML = '<div class="restart-overlay-content">' +
+        '<div class="spinner"></div>' +
+        '<h3>Restarting...</h3>' +
+        '<p id="restart-status">Waiting for router to come back online</p>' +
+        '</div>';
+      document.body.appendChild(overlay);
+
+      let attempts = 0;
+      const maxAttempts = 60;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          await api('/status');
+          clearInterval(poll);
+          overlay.remove();
+          settingsNeedsRestart = false;
+          toast('Router restarted successfully');
+          loadSettings();
+        } catch(e) {
+          if (attempts >= maxAttempts) {
+            clearInterval(poll);
+            const status = document.getElementById('restart-status');
+            if (status) status.innerHTML = 'Router did not respond after 30s.<br><a href="javascript:location.reload()" style="color:var(--primary)">Reload page</a>';
+          }
+        }
+      }, 500);
+    }
+
     function renderSettingInput(field) {
       const val = settingsState[field.key] || '';
       const id = 'setting-' + field.key;
@@ -1529,7 +1628,7 @@ function clientJs(): string {
 
       let html = '';
       if (settingsNeedsRestart) {
-        html += '<div class="restart-banner visible">Settings saved. Restart the router to apply changes.</div>';
+        html += '<div class="restart-banner visible"><span>Settings saved. Restart the router to apply changes.</span><button class="btn-restart" onclick="restartRouter()">Restart Now</button></div>';
       }
 
       const advancedCollapsed = !settingsAdvancedExpanded;

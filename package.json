@@ -21,7 +21,7 @@
     "rewards": "bun src/rewards/cli.ts",
     "rewards:calculate": "bun src/rewards/cli.ts calculate",
     "rewards:list": "bun src/rewards/cli.ts list",
-    "build:binaries": "bun build --compile --target=bun-linux-x64 src/index.ts --outfile ./builds/wayfinder-router-linux-x64 && bun build --compile --target=bun-linux-arm64 src/index.ts --outfile ./builds/wayfinder-router-linux-arm64 && bun build --compile --target=bun-darwin-x64 src/index.ts --outfile ./builds/wayfinder-router-darwin-x64 && bun build --compile --target=bun-darwin-arm64 src/index.ts --outfile ./builds/wayfinder-router-darwin-arm64 && bun build --compile --target=bun-windows-x64 src/index.ts --outfile ./builds/wayfinder-router-windows-x64.exe"
+    "build:binaries": "bun run scripts/build.ts --target=bun-linux-x64 && bun run scripts/build.ts --target=bun-linux-arm64 && bun run scripts/build.ts --target=bun-darwin-x64 && bun run scripts/build.ts --target=bun-darwin-arm64 && bun run scripts/build.ts --target=bun-windows-x64"
   },
   "keywords": [
     "arweave",

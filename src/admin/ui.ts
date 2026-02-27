@@ -179,6 +179,74 @@ function css(): string {
     .card-accent-amber { border-left: 4px solid var(--warning); }
     .card-accent-blue { border-left: 4px solid #3B82F6; }
 
+    /* Dashboard grid - 12 column layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .dashboard-grid > * { grid-column: span 3; }
+    .span-4 { grid-column: span 4 !important; }
+    .span-6 { grid-column: span 6 !important; }
+    .span-8 { grid-column: span 8 !important; }
+    .span-12 { grid-column: span 12 !important; }
+
+    /* Hero card - gradient accent */
+    .card-hero {
+      background: linear-gradient(135deg, var(--primary), #7C4DFF);
+      border: none;
+      color: white;
+      padding: 24px;
+    }
+    .card-hero .card-label { color: rgba(255,255,255,0.7); }
+    .card-hero .card-value { color: #FFFFFF; font-size: 32px; }
+    .card-hero .card-sub { color: rgba(255,255,255,0.65); }
+    .card-hero .dot { background: #4ADE80; }
+
+    /* Stat rows - key/value pairs */
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row-label { color: var(--text-muted); }
+    .stat-row-value { font-weight: 600; color: var(--text-bright); }
+
+    /* Top-border accent cards */
+    .card-stat-green { border-top: 3px solid var(--success); }
+    .card-stat-purple { border-top: 3px solid var(--primary); }
+    .card-stat-blue { border-top: 3px solid #3B82F6; }
+    .card-stat-amber { border-top: 3px solid var(--warning); }
+
+    /* Gateway summary bar */
+    .gateway-summary {
+      display: flex;
+      gap: 24px;
+      padding: 16px 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .gateway-summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .gateway-summary-item strong {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+
     /* Health Bar */
     .health-bar-container {
       background: var(--card);
@@ -682,7 +750,18 @@ function css(): string {
       .nav-item { justify-content: center; padding: 12px; }
       .main { margin-left: 60px; padding: 16px; }
       .card-grid { grid-template-columns: 1fr 1fr; }
+      .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+      .dashboard-grid > *, .span-4, .span-6, .span-8, .span-12 { grid-column: span 2 !important; }
+      .card-hero .card-value { font-size: 24px; }
+      .gateway-summary { flex-wrap: wrap; gap: 12px; }
       .save-bar { left: 60px; }
+    }
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .dashboard-grid { grid-template-columns: repeat(6, 1fr); }
+      .dashboard-grid > * { grid-column: span 3; }
+      .card-hero { grid-column: span 3 !important; }
+      .span-8 { grid-column: span 6 !important; }
+      .span-12 { grid-column: span 6 !important; }
     }
 
     /* Auth screen */
@@ -1082,11 +1161,11 @@ function clientJs(): string {
       const cacheClass = cacheUtil > 90 ? 'critical' : cacheUtil > 70 ? 'high' : '';
 
       el.innerHTML = \`
-        <div class="card-grid">
-          <div class="card card-accent-green">
+        <div class="dashboard-grid">
+          <div class="card card-hero">
             <div class="card-label">Uptime</div>
             <div class="card-value">\${formatUptime(d.uptimeMs || 0)}</div>
-            <div class="card-sub"><span class="dot green"></span>Running</div>
+            <div class="card-sub"><span class="dot"></span>Running</div>
           </div>
           <div class="card card-accent-purple">
             <div class="card-label">Mode</div>
@@ -1103,24 +1182,22 @@ function clientJs(): string {
             <div class="card-value small">\${d.routingStrategy || 'temperature'}</div>
             <div class="card-sub">\${total} gateways tracked</div>
           </div>
-        </div>
 
-        <div class="health-bar-container">
-          <div class="health-bar-label">Gateway Health</div>
-          <div class="health-bar">
-            <div class="segment healthy" style="width:\${healthyPct}%"></div>
-            <div class="segment unhealthy" style="width:\${unhealthyPct}%"></div>
-            <div class="segment circuit-open" style="width:\${circuitPct}%"></div>
+          <div class="health-bar-container span-12" style="margin-bottom:0;">
+            <div class="health-bar-label">Gateway Health &mdash; \${total} gateways</div>
+            <div class="health-bar">
+              <div class="segment healthy" style="width:\${healthyPct}%"></div>
+              <div class="segment unhealthy" style="width:\${unhealthyPct}%"></div>
+              <div class="segment circuit-open" style="width:\${circuitPct}%"></div>
+            </div>
+            <div class="health-bar-legend">
+              <span><span class="legend-dot" style="background:var(--success)"></span>\${healthy} healthy</span>
+              <span><span class="legend-dot" style="background:var(--danger)"></span>\${unhealthy} unhealthy</span>
+              <span><span class="legend-dot" style="background:var(--warning)"></span>\${circuitOpen} circuit-open</span>
+            </div>
           </div>
-          <div class="health-bar-legend">
-            <span><span class="legend-dot" style="background:var(--success)"></span>\${healthy} healthy</span>
-            <span><span class="legend-dot" style="background:var(--danger)"></span>\${unhealthy} unhealthy</span>
-            <span><span class="legend-dot" style="background:var(--warning)"></span>\${circuitOpen} circuit-open</span>
-          </div>
-        </div>
 
-        <div class="card-grid">
-          <div class="section" style="grid-column: span 2;">
+          <div class="section span-8" style="margin-bottom:0;">
             <div class="section-title">Content Cache</div>
             <div style="display:flex;justify-content:space-between;font-size:13px;">
               <span>\${formatBytes(cache.sizeBytes || 0)} / \${formatBytes(cache.maxSizeBytes || 0)}</span>
@@ -1133,14 +1210,21 @@ function clientJs(): string {
               <span>\${cache.diskBacked ? 'Disk-backed' : 'In-memory'}</span>
             </div>
           </div>
-          <div class="section">
+          <div class="section span-4" style="margin-bottom:0;">
             <div class="section-title">Ping Service</div>
             \${ping.initialized ? \`
-              <div style="font-size:13px;color:var(--text);">
-                <p>Rounds: \${ping.roundsCompleted}</p>
-                <p>Success: \${ping.successfulPings}/\${ping.totalPings}</p>
-                \${ping.nextPingInMs ? '<p>Next in: ' + formatUptime(ping.nextPingInMs) + '</p>' : ''}
+              <div class="stat-row">
+                <span class="stat-row-label">Rounds</span>
+                <span class="stat-row-value">\${ping.roundsCompleted}</span>
               </div>
+              <div class="stat-row">
+                <span class="stat-row-label">Success</span>
+                <span class="stat-row-value">\${ping.successfulPings}/\${ping.totalPings}</span>
+              </div>
+              \${ping.nextPingInMs ? \`<div class="stat-row">
+                <span class="stat-row-label">Next ping</span>
+                <span class="stat-row-value">\${formatUptime(ping.nextPingInMs)}</span>
+              </div>\` : ''}
             \` : '<div style="font-size:13px;color:var(--text-muted);">Not initialized</div>'}
           </div>
         </div>
@@ -1185,11 +1269,18 @@ function clientJs(): string {
 
       const arrow = (col) => gatewaySort.col === col ? (gatewaySort.asc ? ' \\u25B2' : ' \\u25BC') : '';
 
+      const healthyCount = gateways.filter(g => g.health === 'healthy').length;
+      const unhealthyCount = gateways.filter(g => g.health === 'unhealthy').length;
+      const circuitCount = gateways.filter(g => g.health === 'circuit-open').length;
+
       el.innerHTML = \`
+        <div class="gateway-summary">
+          <div class="gateway-summary-item"><strong>\${gateways.length}</strong> Total</div>
+          <div class="gateway-summary-item"><span class="dot green"></span><strong>\${healthyCount}</strong> Healthy</div>
+          <div class="gateway-summary-item"><span class="dot red"></span><strong>\${unhealthyCount}</strong> Unhealthy</div>
+          <div class="gateway-summary-item"><span class="dot orange"></span><strong>\${circuitCount}</strong> Circuit Open</div>
+        </div>
         <div class="section">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div class="section-title" style="margin:0;">\${gateways.length} Gateways</div>
-          </div>
           <div style="overflow-x:auto;">
             <table class="data-table">
               <thead>
@@ -1256,31 +1347,30 @@ function clientJs(): string {
         <div class="time-range">
           \${['1h','6h','24h','7d'].map(r => \`<button class="\${telemetryRange === r ? 'active' : ''}" onclick="telemetryRange='\${r}';loadTelemetry()">\${r}</button>\`).join('')}
         </div>
-        <div class="card-grid">
-          <div class="card">
+        <div class="dashboard-grid">
+          <div class="card card-stat-green">
             <div class="card-label">Total Requests</div>
             <div class="card-value">\${formatNumber(totals.totalRequests || 0)}</div>
           </div>
-          <div class="card">
+          <div class="card card-stat-purple">
             <div class="card-label">Success Rate</div>
             <div class="card-value">\${totals.totalRequests ? pct((totals.successfulRequests || 0) / totals.totalRequests) : 'N/A'}</div>
           </div>
-          <div class="card">
+          <div class="card card-stat-blue">
             <div class="card-label">Bytes Served</div>
             <div class="card-value">\${formatBytes(totals.totalBytesServed || 0)}</div>
           </div>
-          <div class="card">
+          <div class="card card-stat-amber">
             <div class="card-label">Active Gateways</div>
             <div class="card-value">\${totals.activeGateways || 0}</div>
           </div>
-        </div>
-        <div class="section">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div class="section-title" style="margin:0;">Gateway Performance</div>
-            <button class="btn btn-sm" onclick="exportTelemetry()">Export CSV</button>
-          </div>
-          <div style="overflow-x:auto;">
-            <table class="data-table">
+          <div class="section span-12" style="margin-bottom:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div class="section-title" style="margin:0;">Gateway Performance</div>
+              <button class="btn btn-sm" onclick="exportTelemetry()">Export CSV</button>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="data-table">
               <thead>
                 <tr>
                   <th>Gateway</th>
@@ -1303,7 +1393,8 @@ function clientJs(): string {
                   </tr>
                 \`).join('')}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </div>
       \`;

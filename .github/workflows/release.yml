@@ -9,8 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build binaries
+  build-unix:
+    name: Build Unix binaries
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,19 +25,40 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Build all binaries
+      - name: Build Unix binaries
         run: |
           mkdir -p builds
           bun build --compile --target=bun-linux-x64 src/index.ts --outfile ./builds/wayfinder-router-linux-x64
           bun build --compile --target=bun-linux-arm64 src/index.ts --outfile ./builds/wayfinder-router-linux-arm64
           bun build --compile --target=bun-darwin-x64 src/index.ts --outfile ./builds/wayfinder-router-darwin-x64
           bun build --compile --target=bun-darwin-arm64 src/index.ts --outfile ./builds/wayfinder-router-darwin-arm64
-          bun build --compile --target=bun-windows-x64 src/index.ts --outfile ./builds/wayfinder-router-windows-x64.exe
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: binaries
+          name: binaries-unix
+          path: builds/
+
+  build-windows:
+    name: Build Windows binary
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Windows binary with metadata
+        run: bun run scripts/build.ts --target=bun-windows-x64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-windows
           path: builds/
 
   test:
@@ -64,7 +85,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: [build, test]
+    needs: [build-unix, build-windows, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -72,7 +93,8 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: binaries
+          pattern: binaries-*
+          merge-multiple: true
           path: release
 
       - name: Prepare release assets

@@ -29,6 +29,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY src ./src
 COPY tsconfig.json ./
+COPY docker-entrypoint.sh ./
 
 # Pre-create data directories so volume mounts inherit correct ownership
 RUN mkdir -p /app/data/content-cache
@@ -45,7 +46,7 @@ EXPOSE 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:3000/wayfinder/health || exit 1
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1:3000/wayfinder/health || exit 1
 
 # Start server
-CMD ["bun", "src/index.ts"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

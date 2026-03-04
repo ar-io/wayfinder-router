@@ -441,7 +441,7 @@ async function createTelemetrySource(): Promise<TelemetrySource> {
         return envGateways.split(",").map((g) => g.trim());
       }
       // Default verification gateways
-      return ["ar-io.dev", "arweave.net", "g8way.io"];
+      return ["turbo-gateway.com", "permagate.io", "ardrive.net"];
     },
   };
 }
@@ -476,8 +476,8 @@ function createMockTelemetrySource(): TelemetrySource {
           isVerificationGateway: true,
         },
         {
-          gateway: "https://arweave.net",
-          fqdn: "arweave.net",
+          gateway: "https://turbo-gateway.com",
+          fqdn: "turbo-gateway.com",
           operatorAddress: "mock-operator-2",
           totalRequests: 3000,
           successfulRequests: 2950,
@@ -492,7 +492,7 @@ function createMockTelemetrySource(): TelemetrySource {
       ];
     },
     async getVerificationGateways(): Promise<string[]> {
-      return ["ar-io.dev", "arweave.net"];
+      return ["turbo-gateway.com", "permagate.io"];
     },
   };
 }

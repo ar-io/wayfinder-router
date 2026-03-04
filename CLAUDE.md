@@ -43,13 +43,6 @@ bun run build:binaries   # Cross-compile standalone binaries for all platforms
 bun run stats        # Show gateway telemetry statistics
 bun run clear:telemetry  # Clear telemetry database
 bun run clear:all    # Clear all data (telemetry + cache)
-
-# Gateway rewards
-bun run rewards:calculate  # Calculate yesterday's rewards
-bun run rewards:list       # List all reward periods
-bun run rewards preview <periodId>     # Preview distribution
-bun run rewards approve <periodId>     # Approve for distribution
-bun run rewards distribute <periodId>  # Execute distribution
 ```
 
 ### Docker
@@ -224,33 +217,3 @@ All configuration via environment variables. See `.env.example` for full list. K
 - `RESTRICT_TO_ROOT_HOST` - When `true`, blocks subdomain and txId path requests (404), only serves root domain content.
 - `GRAPHQL_PROXY_URL` - When set, `/graphql` proxies to this upstream GraphQL endpoint.
 
-## Gateway Rewards System
-
-The rewards system (`src/rewards/`) is an off-chain incentive mechanism for distributing ARIO tokens to gateways based on traffic served.
-
-### Reward Flow
-
-1. **Calculate**: Daily telemetry aggregation produces gateway scores
-2. **Review**: 3-day delay period for fraud detection
-3. **Approve**: Manual approval after review
-4. **Distribute**: Token transfers to operators and delegates
-
-### Scoring Formula
-
-```
-Score = (Volume×0.4 + Reliability×0.25 + Speed×0.2 + Bandwidth×0.15) × VerificationBonus
-```
-
-- Verification gateways get 15% bonus
-- Minimum thresholds: 100 requests, 90% success rate
-- Rewards split between operators and delegates per gateway settings
-
-### Key Files
-
-- `src/rewards/types.ts` - Type definitions and default config
-- `src/rewards/calculator.ts` - Scoring and reward calculation
-- `src/rewards/distributor.ts` - Operator/delegate splits, token transfers
-- `src/rewards/storage.ts` - JSON file storage, Arweave publishing
-- `src/rewards/cli.ts` - CLI commands
-
-See `docs/GATEWAY_REWARDS.md` for full documentation.

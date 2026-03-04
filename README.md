@@ -17,7 +17,6 @@ A lightweight proxy router for [ar.io](https://ar.io) network gateways with cont
 - **Content Cache** — LRU cache for verified content with optional disk-backed persistence for large cache sizes
 - **Arweave HTTP API Proxy** — Proxy Arweave node API endpoints (`/info`, `/tx/*`, `/block/*`, `/wallet/*`, etc.)
 - **Telemetry** — SQLite-backed metrics for gateway performance tracking with configurable sampling
-- **Gateway Rewards** (Experimental) — Off-chain incentive system to reward gateways for serving traffic
 - **Admin UI** — Built-in web admin dashboard on a separate port with setup wizard, status monitoring, gateway health, telemetry, moderation, and settings
 - **Content Moderation** — Admin API for blocking ArNS names and transaction IDs
 - **Rate Limiting** — Per-IP rate limiting with configurable windows and thresholds
@@ -470,62 +469,6 @@ Admin UI endpoints (admin port, default 3001):
 
 When `ROOT_HOST_CONTENT` is not set, the root endpoint (`/`) displays router info.
 
-## Gateway Rewards (Experimental)
-
-> **Note:** The rewards system is experimental and uses mock services for token transfers and delegation lookups. It is not automatically run by the router — all commands must be invoked manually via the CLI. See [docs/GATEWAY_REWARDS.md](docs/GATEWAY_REWARDS.md) for the full design.
-
-The rewards system is designed to distribute ARIO tokens to gateways based on their performance serving traffic through Wayfinder Router.
-
-### Reward Calculation
-
-Gateways are scored on four weighted factors:
-
-- **Volume (40%)** — Number of requests served
-- **Reliability (25%)** — Success rate
-- **Speed (20%)** — P95 latency
-- **Bandwidth (15%)** — Bytes served
-
-Verification gateways receive a 15% bonus. Rewards are split between operators and delegates according to gateway delegation settings.
-
-### CLI Commands
-
-```bash
-# Calculate yesterday's rewards
-bun run rewards:calculate
-
-# Calculate for a specific date
-bun run rewards calculate -- --date 2026-01-25
-
-# List all reward periods
-bun run rewards:list
-
-# Preview distribution (see operator/delegate splits)
-bun run rewards preview <periodId>
-
-# Run fraud detection
-bun run rewards fraud-check <periodId>
-
-# Approve for distribution (after review)
-bun run rewards approve <periodId>
-
-# Reject a period
-bun run rewards reject <periodId> -- --reason "reason text"
-
-# Execute distribution (dry-run first!)
-bun run rewards distribute <periodId> -- --dry-run
-bun run rewards distribute <periodId>
-```
-
-### Reward Configuration
-
-| Variable            | Default               | Description                      |
-| ------------------- | --------------------- | -------------------------------- |
-| `REWARDS_DATA_DIR`  | `./data/rewards`      | Directory for reward period data |
-| `TELEMETRY_DB_PATH` | `./data/telemetry.db` | Path to telemetry database       |
-| `INSTANCE_ID`       | `wayfinder-main`      | Identifier for this instance     |
-
-See [docs/GATEWAY_REWARDS.md](docs/GATEWAY_REWARDS.md) for full documentation.
-
 ## Docker
 
 ### Production
@@ -578,12 +521,8 @@ bun run clear:all        # Clear all data (telemetry + cache)
 
 Additional documentation is available in the [docs/](docs/) directory:
 
-- [Product Specification](docs/PRODUCT_SPEC.md) — Full product spec and design goals
-- [Enterprise Architecture](docs/ENTERPRISE_ARCHITECTURE.md) — Architecture overview and component design
-- [Deployment Checklist](docs/DEPLOYMENT_CHECKLIST.md) — Production deployment guide
-- [Deployment Diagram](docs/DEPLOYMENT_DIAGRAM.md) — Infrastructure topology
-- [Gateway Rewards](docs/GATEWAY_REWARDS.md) — Rewards system documentation
-- [Economic Model](docs/ECONOMIC_MODEL.md) — Token economics and incentive design
+- [Architecture](docs/ARCHITECTURE.md) — System design, request flows, verification, routing strategies
+- [Operations](docs/OPERATIONS.md) — Running, configuring, monitoring, admin UI, troubleshooting
 
 ## License
 

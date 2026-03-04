@@ -1,6 +1,6 @@
 {
   "name": "@ar.io/wayfinder-router",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Lightweight proxy router for ar.io network gateways with verification",
   "type": "module",
   "main": "src/index.ts",

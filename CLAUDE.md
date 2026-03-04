@@ -108,7 +108,7 @@ declare module "hono" {
 - Unused variables/args prefixed with `_` are allowed (eslint: `argsIgnorePattern: '^_'`, `varsIgnorePattern: '^_'`)
 - Target ES2022, module NodeNext
 - Prettier: double quotes, semicolons, 80 char width, trailing commas, 2-space indent
-- ESLint: `no-explicit-any` is off, `eqeqeq: smart`, `no-return-await: error`
+- ESLint: `no-explicit-any` is off, `eqeqeq: smart`, `no-return-await: error`, `strict-boolean-expressions: warn`
 
 ### Verification Architecture
 The router separates **routing** (where to fetch data) from **verification** (who to trust for hashes):
@@ -166,6 +166,7 @@ Router management endpoints (public port) are under the `/wayfinder/` prefix:
 | Endpoint | Description |
 |----------|-------------|
 | `/wayfinder/health` | Health check |
+| `/ar-io/healthcheck` | Health check (API Guard compatible alias) |
 | `/wayfinder/ready` | Readiness check |
 | `/wayfinder/metrics` | Prometheus metrics |
 | `/wayfinder/info` | Router info and configuration |
@@ -183,6 +184,7 @@ Admin UI endpoints (admin port, default 3001):
 | `GET /api/config` | Current config (sanitized) |
 | `GET /api/moderation` | Moderation status and blocklist |
 | `POST /api/config/save` | Save .env file |
+| `POST /api/restart` | Validate config and restart router |
 
 Arweave HTTP API endpoints (when `ARWEAVE_API_ENABLED=true`):
 
@@ -204,7 +206,7 @@ Content is served at:
 All configuration via environment variables. See `.env.example` for full list. Key variables:
 
 **Server**: `PORT`, `HOST`, `BASE_DOMAIN`, `ROOT_HOST_CONTENT`, `RESTRICT_TO_ROOT_HOST`, `GRAPHQL_PROXY_URL`
-**Admin UI**: `ADMIN_UI_ENABLED`, `ADMIN_PORT`, `ADMIN_HOST`, `ADMIN_TOKEN`
+**Admin UI**: `ADMIN_UI_ENABLED`, `ADMIN_PORT`, `ADMIN_HOST`, `ADMIN_TOKEN`, `ADMIN_OPEN_BROWSER`
 **Mode**: `DEFAULT_MODE` (`proxy`/`route`), `ALLOW_MODE_OVERRIDE`
 **Verification**: `VERIFICATION_ENABLED`, `VERIFICATION_GATEWAY_SOURCE`, `VERIFICATION_GATEWAY_COUNT`
 **Routing**: `ROUTING_STRATEGY`, `ROUTING_GATEWAY_SOURCE`, `ROUTING_STATIC_GATEWAYS`

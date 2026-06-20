@@ -43,6 +43,7 @@ function createValidConfig(overrides?: Partial<RouterConfig>): RouterConfig {
       refreshIntervalMs: 86_400_000,
       minGateways: 3,
       fallbackGateways: [new URL("https://turbo-gateway.com")],
+      solanaRpcUrl: "https://api.mainnet-beta.solana.com",
     },
     resilience: {
       gatewayHealthTtlMs: 300_000,

@@ -14,6 +14,7 @@
  */
 
 import { ARIO } from "@ar.io/sdk";
+import { createSolanaRpc } from "@solana/kit";
 import type { GatewaysProvider } from "@ar.io/wayfinder-core";
 import type { Logger } from "../types/index.js";
 
@@ -32,6 +33,8 @@ export interface NetworkGatewayManagerOptions {
   minGateways?: number;
   /** Fallback gateways if network fetch fails */
   fallbackGateways?: URL[];
+  /** Solana RPC URL for fetching gateway registry */
+  solanaRpcUrl?: string;
   /** Logger instance */
   logger: Logger;
 }
@@ -53,6 +56,7 @@ export class NetworkGatewayManager {
   private refreshIntervalMs: number;
   private minGateways: number;
   private fallbackGateways: URL[];
+  private solanaRpcUrl: string;
   private logger: Logger;
 
   private cache: GatewayCache | null = null;
@@ -77,6 +81,8 @@ export class NetworkGatewayManager {
       new URL("https://ardrive.net"),
       new URL("https://permagate.io"),
     ];
+    this.solanaRpcUrl =
+      options.solanaRpcUrl ?? "https://api.mainnet-beta.solana.com";
     this.logger = options.logger;
   }
 
@@ -283,7 +289,8 @@ export class NetworkGatewayManager {
     this.logger.debug("Fetching gateways from ar.io network...");
 
     try {
-      const ario = ARIO.mainnet();
+      const rpc = createSolanaRpc(this.solanaRpcUrl);
+      const ario = ARIO.init({ rpc });
 
       // Fetch ALL gateways (the SDK paginates internally)
       const result = await ario.getGateways({

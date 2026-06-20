@@ -319,6 +319,7 @@ export function createNetworkManager(
     refreshIntervalMs: config.networkGateways.refreshIntervalMs,
     minGateways: config.networkGateways.minGateways,
     fallbackGateways: config.networkGateways.fallbackGateways,
+    solanaRpcUrl: config.networkGateways.solanaRpcUrl,
     logger,
   });
 }

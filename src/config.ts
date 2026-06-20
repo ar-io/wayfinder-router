@@ -189,6 +189,11 @@ export function loadConfig(): RouterConfig {
       minGateways: getEnvInt("NETWORK_MIN_GATEWAYS", 3),
       // Fallback gateways if network fetch fails
       fallbackGateways: parseUrls(fallbackGatewaysStr),
+      // Solana RPC URL for fetching gateway registry
+      solanaRpcUrl: getEnv(
+        "SOLANA_RPC_URL",
+        "https://api.mainnet-beta.solana.com",
+      ),
     },
 
     resilience: {

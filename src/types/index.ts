@@ -157,6 +157,8 @@ export interface RouterConfig {
     minGateways: number;
     // Fallback gateways if network fetch fails
     fallbackGateways: URL[];
+    // Solana RPC URL for fetching gateway registry
+    solanaRpcUrl: string;
   };
 
   resilience: {

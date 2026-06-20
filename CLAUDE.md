@@ -156,8 +156,25 @@ The admin UI (`src/admin/`) is a built-in web dashboard that runs on a **separat
 
 The admin server is started as a separate `Bun.serve()` in `src/index.ts`. Security: binds to `127.0.0.1` by default (localhost only). When `ADMIN_HOST=0.0.0.0`, `ADMIN_TOKEN` is required.
 
+### Rewards System
+Off-chain reward calculation for gateway operators in `src/rewards/`:
+- **`calculator.ts`** - Calculates gateway rewards from telemetry (request volume, success rate, latency, bytes served)
+- **`distributor.ts`** - Handles distribution with delegation splits between operators and delegates
+- **`storage.ts`** - Persistence for reward periods
+- **`types.ts`** - Reward/delegation types including fraud detection flags (suspicious volume, self-routing, sybil, latency manipulation)
+
+CLI: `bun run rewards`, `bun run rewards:calculate`, `bun run rewards:list`
+
+### Moderation System
+`src/moderation/` provides content blocking by ArNS name or txId:
+- **`blocklist-service.ts`** - File-watched JSON blocklist with hot reload (no restart needed)
+- **`handlers.ts`** - Moderation API endpoints (exposed via admin server)
+
+### HTTP Client
+`src/http/http-client.ts` wraps `globalThis.fetch` with connection pooling. Configured via `HTTP_CONNECTIONS_PER_HOST`, `HTTP_CONNECT_TIMEOUT_MS`, `HTTP_KEEPALIVE_TIMEOUT_MS`.
+
 ### Graceful Shutdown
-The `ShutdownManager` (`src/utils/shutdown-manager.ts`) handles SIGTERM/SIGINT with a drain period for in-flight requests before force exit. Configuration via `SHUTDOWN_DRAIN_TIMEOUT_MS` and `SHUTDOWN_TIMEOUT_MS`.
+The `ShutdownManager` (`src/utils/shutdown-manager.ts`) handles SIGTERM/SIGINT with a drain period for in-flight requests before force exit. `RequestTracker` (`src/utils/request-tracker.ts`) tracks in-flight requests; 503 responses are sent during drain. Configuration via `SHUTDOWN_DRAIN_TIMEOUT_MS` and `SHUTDOWN_TIMEOUT_MS`.
 
 ## API Endpoints
 
@@ -211,7 +228,11 @@ All configuration via environment variables. See `.env.example` for full list. K
 **Verification**: `VERIFICATION_ENABLED`, `VERIFICATION_GATEWAY_SOURCE`, `VERIFICATION_GATEWAY_COUNT`
 **Routing**: `ROUTING_STRATEGY`, `ROUTING_GATEWAY_SOURCE`, `ROUTING_STATIC_GATEWAYS`
 **Cache**: `CONTENT_CACHE_ENABLED`, `CONTENT_CACHE_MAX_SIZE_BYTES`, `ARNS_CACHE_TTL_MS`
-**Arweave API**: `ARWEAVE_API_ENABLED`, `ARWEAVE_READ_NODES`, `ARWEAVE_WRITE_NODES`
+**Arweave API**: `ARWEAVE_API_ENABLED`, `ARWEAVE_READ_NODES`, `ARWEAVE_WRITE_NODES`, `ARWEAVE_API_CACHE_IMMUTABLE_TTL_MS`, `ARWEAVE_API_CACHE_DYNAMIC_TTL_MS`
+**HTTP**: `HTTP_CONNECTIONS_PER_HOST`, `HTTP_CONNECT_TIMEOUT_MS`, `HTTP_KEEPALIVE_TIMEOUT_MS`
+**Network**: `NETWORK_GATEWAY_REFRESH_MS`, `NETWORK_MIN_GATEWAYS`, `NETWORK_FALLBACK_GATEWAYS`
+**Logging**: `LOG_LEVEL`, `LOG_PRETTY`
+**Resilience**: `EXIT_ON_UNHANDLED_REJECTION`, `EXIT_ON_UNCAUGHT_EXCEPTION`, `EXIT_GRACE_PERIOD_MS`
 
 ### Root Host Configuration
 

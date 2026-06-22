@@ -35,7 +35,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@ar.io/sdk": "^4.0.0",
-    "@ar.io/wayfinder-core": "^2.0.0",
+    "@ar.io/wayfinder-core": "^2.0.1",
     "@solana/kit": "^6.8.0",
     "hono": "^4.6.0",
     "lru-cache": "^11.0.0",

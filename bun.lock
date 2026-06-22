@@ -5,7 +5,7 @@
       "name": "@ar.io/wayfinder-router",
       "dependencies": {
         "@ar.io/sdk": "^4.0.0",
-        "@ar.io/wayfinder-core": "^2.0.0",
+        "@ar.io/wayfinder-core": "2.0.1",
         "@solana/kit": "^6.8.0",
         "hono": "^4.6.0",
         "lru-cache": "^11.0.0",
@@ -34,7 +34,7 @@
 
     "@ar.io/solana-contracts": ["@ar.io/solana-contracts@1.0.0", "", { "dependencies": { "@noble/hashes": "^1.5.0", "bs58": "^6.0.0" }, "peerDependencies": { "@solana/kit": ">=6 <7" } }, "sha512-/rmxIyViK9USkedcn4zrHWkg+tGBE160PSbJ2xwEcugtXDSOf5Cc0E6R8YoG7HT5oKkU0QY1QEeSeVvcYgMYBQ=="],
 
-    "@ar.io/wayfinder-core": ["@ar.io/wayfinder-core@2.0.0", "", { "dependencies": { "@dha-team/arbundles": "^1.0.3", "@opentelemetry/api": "^1.9.0", "@opentelemetry/context-zone": "^2.0.1", "@opentelemetry/exporter-trace-otlp-http": "^0.206.0", "@opentelemetry/sdk-trace-base": "^2.0.1", "@opentelemetry/sdk-trace-node": "^2.0.1", "@opentelemetry/sdk-trace-web": "^2.0.1", "arweave": "^1.14.0", "eventemitter3": "^5.0.1", "plimit-lit": "^3.0.1", "rfc4648": "^1.5.4", "zone.js": "^0.15.1" }, "peerDependencies": { "@ar.io/sdk": ">=4.0.0" }, "optionalPeers": ["@ar.io/sdk"] }, "sha512-rxVbIyLljSF3DcpjigQS4uR3e3jWJnFLcD4ANdKyfXm1qgw2jdTYX/JGBJFIfT5fSlxT+G2UhQX1fLMao+EV5w=="],
+    "@ar.io/wayfinder-core": ["@ar.io/wayfinder-core@2.0.1", "", { "dependencies": { "@dha-team/arbundles": "^1.0.3", "@opentelemetry/api": "^1.9.0", "@opentelemetry/context-zone": "^2.0.1", "@opentelemetry/exporter-trace-otlp-http": "^0.206.0", "@opentelemetry/sdk-trace-base": "^2.0.1", "@opentelemetry/sdk-trace-node": "^2.0.1", "@opentelemetry/sdk-trace-web": "^2.0.1", "arweave": "^1.14.0", "eventemitter3": "^5.0.1", "plimit-lit": "^3.0.1", "rfc4648": "^1.5.4", "zone.js": "^0.15.1" }, "peerDependencies": { "@ar.io/sdk": ">=4.0.0" }, "optionalPeers": ["@ar.io/sdk"] }, "sha512-rIFTxyCX84Odt9JUpXzqg+RNZIIs2ihKw7gENryF7tNLUbf24+nyQsSXtzmQhcR1fWc6ggXDiy7lcQ5+bZc1AA=="],
 
     "@dha-team/arbundles": ["@dha-team/arbundles@1.0.4", "", { "dependencies": { "@ethersproject/bytes": "5.7.0", "@ethersproject/hash": "5.7.0", "@ethersproject/providers": "5.7.2", "@ethersproject/signing-key": "5.7.0", "@ethersproject/transactions": "5.7.0", "@ethersproject/wallet": "5.7.0", "@noble/ed25519": "1.6.1", "arweave": "1.15.7", "base64url": "3.0.1", "bs58": "4.0.1", "keccak": "3.0.2", "secp256k1": "5.0.0" }, "optionalDependencies": { "@randlabs/myalgo-connect": "1.1.2", "algosdk": "1.13.1", "arweave-stream-tx": "1.1.0", "multistream": "4.1.0", "tmp-promise": "3.0.2" } }, "sha512-T/4pv6bosp4caV32EubHTqDzLAqL6481Bsqd348JO0h+HSaMysloY/pFSLwZf9U3IvkJngIZ4njrYQUkjSkkwA=="],
 

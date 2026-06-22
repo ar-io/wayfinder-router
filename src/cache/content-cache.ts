@@ -25,6 +25,7 @@ export interface CachedContent {
   verifiedAt: number;
   txId: string;
   hash?: string; // The verified hash
+  sourceGateway?: string; // Gateway that originally served this content
   accessCount: number; // Track popularity
   lastAccessed: number; // Timestamp of last access
 }

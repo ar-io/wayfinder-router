@@ -399,7 +399,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
             // Record telemetry
             recordTelemetryWithVerification({
               traceId,
-              gateway: "cache",
+              gateway: cachedContent.sourceGateway ?? "cache",
               requestType: "arns",
               identifier: arnsName,
               path,
@@ -462,6 +462,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
           verifiedAt: Date.now(),
           txId: result.contentTxId,
           hash: result.verificationResult.hash,
+          sourceGateway: result.gateway.origin,
         });
 
         if (cached) {
@@ -665,7 +666,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
 
               recordTelemetryWithVerification({
                 traceId,
-                gateway: "cache",
+                gateway: cachedContent.sourceGateway ?? "cache",
                 requestType: "txid",
                 identifier: txId,
                 path,
@@ -713,7 +714,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
 
             recordTelemetryWithVerification({
               traceId,
-              gateway: "cache",
+              gateway: cachedContent.sourceGateway ?? "cache",
               requestType: "txid",
               identifier: txId,
               path,
@@ -767,6 +768,7 @@ export function createProxyHandler(deps: ProxyHandlerDeps) {
           verifiedAt: Date.now(),
           txId: result.contentTxId,
           hash: result.verificationResult.hash,
+          sourceGateway: result.gateway.origin,
         });
 
         if (cached) {

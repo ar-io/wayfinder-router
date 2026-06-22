@@ -14,7 +14,11 @@ import type {
   GatewayRewardExport,
   TelemetryConfig,
 } from "../types/telemetry.js";
-import { getHourBucket, getLatencyBucket } from "../types/telemetry.js";
+import {
+  getHourBucket,
+  getLatencyBucket,
+  calculatePercentile,
+} from "../types/telemetry.js";
 
 export interface TelemetryStorageOptions {
   config: TelemetryConfig;
@@ -345,6 +349,24 @@ export class TelemetryStorage {
 
     const rows = stmt.all(startHour, endHour) as any[];
 
+    // Fetch latency histogram buckets per gateway (need raw rows to merge)
+    const bucketStmt = this.db.prepare(`
+      SELECT gateway, latency_buckets FROM gateway_hourly_stats
+      WHERE hour_bucket >= ? AND hour_bucket < ?
+    `);
+    const bucketRows = bucketStmt.all(startHour, endHour) as any[];
+
+    // Merge latency buckets per gateway across all hours
+    const mergedBuckets = new Map<string, Record<string, number>>();
+    for (const row of bucketRows) {
+      const existing = mergedBuckets.get(row.gateway) || {};
+      const hourBuckets = JSON.parse(row.latency_buckets || "{}");
+      for (const [key, count] of Object.entries(hourBuckets)) {
+        existing[key] = (existing[key] || 0) + (count as number);
+      }
+      mergedBuckets.set(row.gateway, existing);
+    }
+
     // Calculate total hours in range
     const startDate = new Date(startHour);
     const endDate = new Date(endHour);
@@ -362,6 +384,9 @@ export class TelemetryStorage {
       const latencyCount = row.latency_count || 0;
       const latencySum = row.latency_sum || 0;
       const hoursActive = row.hours_active || 0;
+
+      // Calculate percentiles from merged histogram buckets
+      const gatewayBuckets = mergedBuckets.get(row.gateway) || {};
 
       return {
         gateway: row.gateway,
@@ -384,9 +409,9 @@ export class TelemetryStorage {
               totalRequests
             : 0,
         avgLatencyMs: latencyCount > 0 ? latencySum / latencyCount : 0,
-        p50LatencyMs: 0, // Would need histogram aggregation
-        p95LatencyMs: 0,
-        p99LatencyMs: 0,
+        p50LatencyMs: calculatePercentile(gatewayBuckets, latencyCount, 50),
+        p95LatencyMs: calculatePercentile(gatewayBuckets, latencyCount, 95),
+        p99LatencyMs: calculatePercentile(gatewayBuckets, latencyCount, 99),
         hoursActive,
         hoursMissing: Math.max(0, totalHours - hoursActive),
         availabilityRate: totalHours > 0 ? hoursActive / totalHours : 0,

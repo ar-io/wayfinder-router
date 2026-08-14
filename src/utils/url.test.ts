@@ -184,6 +184,45 @@ describe("constructGatewayUrl", () => {
       "dE0rmDfl9_OWjkDznNEXHaSO_JohJbRPlUp8TLBTklA",
     );
   });
+
+  describe("query strings", () => {
+    const txId = "dE0rmDfl9_OWjkDznNEXHaSO_JohJbRPlUp8TLBTklA";
+
+    it("keeps the query string separate on sandbox subdomain URLs", () => {
+      const url = constructGatewayUrl({
+        gateway: new URL("https://ar-io.dev"),
+        txId,
+        path: "/index.html?v=2",
+      });
+
+      expect(url.pathname).toBe(`/${txId}/index.html`);
+      expect(url.search).toBe("?v=2");
+      expect(url.href).not.toContain("%3F");
+    });
+
+    it("keeps the query string separate for localhost routing", () => {
+      const url = constructGatewayUrl({
+        gateway: new URL("http://localhost:3000"),
+        txId,
+        path: "/?a=1&b=2",
+      });
+
+      expect(url.pathname).toBe(`/${txId}/`);
+      expect(url.search).toBe("?a=1&b=2");
+    });
+
+    it("keeps the query string separate when useSubdomain is false", () => {
+      const url = constructGatewayUrl({
+        gateway: new URL("https://ar-io.dev"),
+        txId,
+        path: "/data?download=true",
+        useSubdomain: false,
+      });
+
+      expect(url.pathname).toBe(`/${txId}/data`);
+      expect(url.search).toBe("?download=true");
+    });
+  });
 });
 
 describe("constructArnsGatewayUrl", () => {
@@ -214,6 +253,45 @@ describe("constructArnsGatewayUrl", () => {
       path: "/",
     });
     expect(url.hostname).toBe("ardrive.ar-io.dev");
+  });
+
+  // The request parser hands these functions `pathname + search` as a single
+  // string. Assigning that to url.pathname encodes "?" as "%3F", which turned
+  // the query into a literal path segment and dropped the caller's params.
+  describe("query strings", () => {
+    it("keeps the query string separate from the path", () => {
+      const url = constructArnsGatewayUrl({
+        gateway: new URL("https://ar-io.dev"),
+        arnsName: "ardrive",
+        path: "/some/path?foo=bar&x=1",
+      });
+
+      expect(url.pathname).toBe("/some/path");
+      expect(url.search).toBe("?foo=bar&x=1");
+      expect(url.href).not.toContain("%3F");
+    });
+
+    it("keeps a root-path query string separate", () => {
+      const url = constructArnsGatewayUrl({
+        gateway: new URL("https://ar-io.dev"),
+        arnsName: "ardrive",
+        path: "/?mode=route",
+      });
+
+      expect(url.pathname).toBe("/");
+      expect(url.search).toBe("?mode=route");
+    });
+
+    it("handles query strings for localhost path-based routing", () => {
+      const url = constructArnsGatewayUrl({
+        gateway: new URL("http://localhost:3000"),
+        arnsName: "ardrive",
+        path: "/app?q=1",
+      });
+
+      expect(url.pathname).toBe("/ardrive/app");
+      expect(url.search).toBe("?q=1");
+    });
   });
 });
 

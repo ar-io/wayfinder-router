@@ -105,6 +105,27 @@ function base32Encode(data: Uint8Array): string {
 }
 
 /**
+ * Assign a "/path?query" string to a URL.
+ *
+ * The request parser carries the query string inside `path` (it builds
+ * `pathname + search`). Assigning that straight to `url.pathname` makes the
+ * WHATWG URL setter percent-encode the "?" as "%3F", which turns the query
+ * into a literal path segment — upstream gateways then get a bogus path and
+ * the caller's query parameters are lost. Split the two parts instead.
+ */
+function applyPathWithQuery(url: URL, pathWithQuery: string): void {
+  const queryIndex = pathWithQuery.indexOf("?");
+
+  if (queryIndex === -1) {
+    url.pathname = pathWithQuery;
+    return;
+  }
+
+  url.pathname = pathWithQuery.slice(0, queryIndex);
+  url.search = pathWithQuery.slice(queryIndex + 1);
+}
+
+/**
  * Construct gateway URL for a transaction
  */
 export function constructGatewayUrl(params: {
@@ -118,7 +139,7 @@ export function constructGatewayUrl(params: {
   // For localhost, always use path-based routing
   if (gateway.hostname === "localhost" || gateway.hostname === "127.0.0.1") {
     const url = new URL(gateway);
-    url.pathname = `/${txId}${path}`;
+    applyPathWithQuery(url, `/${txId}${path}`);
     return url;
   }
 
@@ -128,13 +149,13 @@ export function constructGatewayUrl(params: {
     const sandbox = sandboxFromTxId(txId);
     const url = new URL(gateway);
     url.hostname = `${sandbox}.${url.hostname}`;
-    url.pathname = `/${txId}${path}`;
+    applyPathWithQuery(url, `/${txId}${path}`);
     return url;
   }
 
   // Path-based routing
   const url = new URL(gateway);
-  url.pathname = `/${txId}${path}`;
+  applyPathWithQuery(url, `/${txId}${path}`);
   return url;
 }
 
@@ -151,14 +172,14 @@ export function constructArnsGatewayUrl(params: {
   // For localhost, use path-based routing
   if (gateway.hostname === "localhost" || gateway.hostname === "127.0.0.1") {
     const url = new URL(gateway);
-    url.pathname = `/${arnsName}${path}`;
+    applyPathWithQuery(url, `/${arnsName}${path}`);
     return url;
   }
 
   // Use ArNS name as subdomain
   const url = new URL(gateway);
   url.hostname = `${arnsName.toLowerCase()}.${url.hostname}`;
-  url.pathname = path || "/";
+  applyPathWithQuery(url, path || "/");
   return url;
 }
 

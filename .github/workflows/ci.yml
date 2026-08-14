@@ -3,8 +3,19 @@ name: CI
 on:
   push:
     branches: [main]
+  # No branch filter: `branches:` matches the BASE branch, so restricting it to
+  # main meant a pull request stacked on another branch never ran CI at all and
+  # merged unvalidated. Every pull request should be checked, whatever it targets.
   pull_request:
-    branches: [main]
+  # Allows re-running checks on a branch on demand, without pushing an empty
+  # commit or closing and reopening the pull request.
+  workflow_dispatch:
+
+# A superseded run tells us nothing, so cancel it when new commits arrive.
+# Pushes to main are never cancelled: each main commit keeps its own result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:

@@ -112,6 +112,17 @@ export function loadConfig(): RouterConfig {
   // Arweave nodes for POST requests (tx submission) - falls back to read nodes if empty
   const arweaveWriteNodesStr = getEnv("ARWEAVE_WRITE_NODES", "");
 
+  // Bun.serve's idleTimeout must outlast our own upstream budget, otherwise Bun
+  // drops the client connection while we are still retrying gateways and the
+  // caller sees an empty reply instead of content or a 502.
+  const httpRequestTimeoutMs = getEnvInt("HTTP_REQUEST_TIMEOUT_MS", 30_000);
+  const routingRetryAttempts = getEnvInt("RETRY_ATTEMPTS", 3);
+  const BUN_MAX_IDLE_TIMEOUT_SEC = 255;
+  const defaultIdleTimeoutSec = Math.min(
+    BUN_MAX_IDLE_TIMEOUT_SEC,
+    Math.ceil((httpRequestTimeoutMs * routingRetryAttempts) / 1000) + 15,
+  );
+
   return {
     server: {
       port: getEnvInt("PORT", 3000),
@@ -130,6 +141,10 @@ export function loadConfig(): RouterConfig {
       restrictToRootHost: getEnvBool("RESTRICT_TO_ROOT_HOST", false),
       // GraphQL proxy URL - when set, /graphql proxies to this endpoint
       graphqlProxyUrl: getEnv("GRAPHQL_PROXY_URL", ""),
+      idleTimeoutSec: getEnvInt(
+        "SERVER_IDLE_TIMEOUT_SEC",
+        defaultIdleTimeoutSec,
+      ),
     },
 
     mode: {
@@ -333,6 +348,15 @@ export function loadConfig(): RouterConfig {
 }
 
 export function validateConfig(config: RouterConfig): void {
+  // === SERVER VALIDATION ===
+
+  // Bun.serve rejects idleTimeout above 255 seconds.
+  if (config.server.idleTimeoutSec < 1 || config.server.idleTimeoutSec > 255) {
+    throw new Error(
+      `SERVER_IDLE_TIMEOUT_SEC must be between 1 and 255, got ${config.server.idleTimeoutSec}`,
+    );
+  }
+
   // === VERIFICATION VALIDATION ===
 
   // Validate verification gateway source

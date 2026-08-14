@@ -50,6 +50,7 @@ function createTestConfig(overrides?: Record<string, unknown>): RouterConfig {
       rootHostContent: "",
       restrictToRootHost: false,
       graphqlProxyUrl: "",
+      idleTimeoutSec: 105,
     },
     mode: {
       default: "proxy" as RouterMode,

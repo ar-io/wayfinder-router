@@ -28,6 +28,7 @@ bun run typecheck    # Type-check without emitting
 bun run test         # Run tests once with vitest
 bun run test:watch   # Run tests in watch mode
 bunx vitest run src/path/to/file.test.ts  # Run a single test file
+bunx vitest run -t "test name"            # Run a single test by name
 
 # Linting and formatting
 bun run lint         # Run ESLint on src/
@@ -43,6 +44,16 @@ bun run build:binaries   # Cross-compile standalone binaries for all platforms
 bun run stats        # Show gateway telemetry statistics
 bun run clear:telemetry  # Clear telemetry database
 bun run clear:all    # Clear all data (telemetry + cache)
+bun run rewards      # Reward calculation CLI (also: rewards:calculate, rewards:list)
+
+# Scripts not wired to package.json
+bun scripts/smoke-test.ts [base-url]   # End-to-end check against a *running* router
+bun scripts/traffic-sim.ts             # Generate synthetic traffic for telemetry testing
+
+# Full e2e sweep against a running router (proxy, route, verification,
+# manifest, sandbox redirect, Arweave API, GraphQL). Addresses ArNS and
+# sandbox hosts via the Host header, so no wildcard DNS is needed.
+bun scripts/smoke-test.ts http://127.0.0.1:3000 --all --tx-id <txId>
 ```
 
 ### Docker
@@ -53,6 +64,27 @@ docker build -t wayfinder-router .   # Build production image
 docker run -p 3000:3000 -p 3001:3001 --env-file .env wayfinder-router  # Run production
 ```
 
+## Testing
+
+Vitest with **no config file** — defaults apply, so tests are discovered as `*.test.ts` colocated
+next to the code they test (`src/cache/arns-cache.test.ts`, `src/services/verifier.test.ts`, …).
+Integration tests that exercise the wired-up server live in `src/integration/`.
+
+`src/test-helpers.ts` holds the shared fixtures and mock factories — **use these instead of
+hand-rolling mocks**: `TEST_GATEWAY_A/B/C`, `TEST_GATEWAYS`, `TEST_TX_ID` (a valid 43-char
+base64url ID — invalid IDs get rejected by request parsing), `createTestLogger()`,
+`createMockGatewaysProvider()`, `createMockRoutingStrategy()`, `createMockVerificationStrategy()`.
+
+Tests must not hit the network: mock `globalThis.fetch` or inject a mock provider/strategy.
+
+## CI
+
+`.github/workflows/ci.yml` runs on push/PR to `main`: `typecheck` → `lint` → `test` →
+`bun build --compile src/index.ts`. That last step means **the code must stay
+single-file-compilable** — no dynamic `import()` of runtime-computed paths, no reliance on
+files being present on disk next to the source. This is why the admin UI is an embedded
+template literal (`src/admin/ui.ts`) rather than a static asset directory.
+
 ## Architecture
 
 ### Entry Points
@@ -61,7 +93,11 @@ docker run -p 3000:3000 -p 3001:3001 --env-file .env wayfinder-router  # Run pro
 - `src/config.ts` - Environment variable loading and validation
 
 ### Request Flow
-1. **Middleware** (`src/middleware/`) - Request parsing, mode selection, rate limiting, error handling
+1. **Middleware** (`src/middleware/`) - Registered in `createServer()` in this order, and the order
+   matters: `secureHeaders` → `cors` → `requestTracking` (drain-aware, 503s during shutdown) →
+   `rateLimiter` → hono logger (optional) → `requestParser` (populates `c.var.requestInfo`) →
+   `modeSelector` (populates `c.var.routerMode`). Named routes are registered after middleware;
+   content dispatch is the trailing `app.all("*")` catch-all.
 2. **Handlers** (`src/handlers/`) - proxy.ts (fetch/verify/serve), route.ts (redirect), health.ts, stats.ts
 3. **Services** (`src/services/`) - Core business logic (gateway selection, content fetching, verification, ArNS resolution, manifest resolution)
 4. **Cache** (`src/cache/`) - ArNS cache, gateway health, content cache, manifest cache, gateway temperature
@@ -168,7 +204,10 @@ CLI: `bun run rewards`, `bun run rewards:calculate`, `bun run rewards:list`
 ### Moderation System
 `src/moderation/` provides content blocking by ArNS name or txId:
 - **`blocklist-service.ts`** - File-watched JSON blocklist with hot reload (no restart needed)
-- **`handlers.ts`** - Moderation API endpoints (exposed via admin server)
+- **`handlers.ts`** - Moderation API endpoints registered on the **public** app under
+  `/wayfinder/moderation/*` (only when `config.moderation.enabled`). All are behind
+  `createModerationAuthMiddleware` except the public `check/:type/:value` endpoint.
+  The admin server exposes its own separate `/api/moderation*` routes over the same service.
 
 ### HTTP Client
 `src/http/http-client.ts` wraps `globalThis.fetch` with connection pooling. Configured via `HTTP_CONNECTIONS_PER_HOST`, `HTTP_CONNECT_TIMEOUT_MS`, `HTTP_KEEPALIVE_TIMEOUT_MS`.
@@ -188,6 +227,11 @@ Router management endpoints (public port) are under the `/wayfinder/` prefix:
 | `/wayfinder/metrics` | Prometheus metrics |
 | `/wayfinder/info` | Router info and configuration |
 | `/wayfinder/stats/gateways` | Gateway performance statistics |
+| `/wayfinder/stats/gateways/list` | List all tracked gateways |
+| `/wayfinder/stats/gateways/:gateway` | Per-gateway detail |
+| `/wayfinder/stats/export` | Telemetry export for reward calculation |
+| `/wayfinder/moderation/check/:type/:value` | Blocklist check (public, no auth) |
+| `/wayfinder/moderation/*` | Blocklist admin: `blocklist`, `block`, `stats`, `reload` (auth required) |
 | `/graphql` | GraphQL proxy (requires `GRAPHQL_PROXY_URL`) |
 
 Admin UI endpoints (admin port, default 3001):
@@ -222,7 +266,7 @@ Content is served at:
 
 All configuration via environment variables. See `.env.example` for full list. Key variables:
 
-**Server**: `PORT`, `HOST`, `BASE_DOMAIN`, `ROOT_HOST_CONTENT`, `RESTRICT_TO_ROOT_HOST`, `GRAPHQL_PROXY_URL`
+**Server**: `PORT`, `HOST`, `BASE_DOMAIN`, `ROOT_HOST_CONTENT`, `RESTRICT_TO_ROOT_HOST`, `GRAPHQL_PROXY_URL`, `SERVER_IDLE_TIMEOUT_SEC`
 **Admin UI**: `ADMIN_UI_ENABLED`, `ADMIN_PORT`, `ADMIN_HOST`, `ADMIN_TOKEN`, `ADMIN_OPEN_BROWSER`
 **Mode**: `DEFAULT_MODE` (`proxy`/`route`), `ALLOW_MODE_OVERRIDE`
 **Verification**: `VERIFICATION_ENABLED`, `VERIFICATION_GATEWAY_SOURCE`, `VERIFICATION_GATEWAY_COUNT`
@@ -239,4 +283,12 @@ All configuration via environment variables. See `.env.example` for full list. K
 - `ROOT_HOST_CONTENT` - Content to serve at root domain (ArNS name or txId, auto-detected). Backwards compatible with `ARNS_ROOT_HOST`.
 - `RESTRICT_TO_ROOT_HOST` - When `true`, blocks subdomain and txId path requests (404), only serves root domain content.
 - `GRAPHQL_PROXY_URL` - When set, `/graphql` proxies to this upstream GraphQL endpoint.
+
+## Reference Docs
+
+This file is the summary; deeper detail lives in the repo and should be updated alongside it:
+- `docs/ARCHITECTURE.md` - Expanded version of the Architecture section above
+- `docs/OPERATIONS.md` - Deployment, admin UI setup, monitoring, moderation runbooks
+- `README.md` - User-facing quick start and the authoritative env var reference
+- `.env.example` - Every config variable with inline documentation
 

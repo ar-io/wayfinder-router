@@ -15,6 +15,7 @@ function createValidConfig(overrides?: Partial<RouterConfig>): RouterConfig {
       rootHostContent: "",
       restrictToRootHost: false,
       graphqlProxyUrl: "",
+      idleTimeoutSec: 105,
     },
     mode: { default: "proxy", allowOverride: true },
     verification: {
@@ -322,6 +323,57 @@ describe("loadConfig", () => {
     process.env.VERIFICATION_ENABLED = "false";
     const config = loadConfig();
     expect(config.verification.enabled).toBe(false);
+  });
+
+  describe("server idle timeout", () => {
+    // Bun.serve defaults idleTimeout to 10s. That is shorter than the router's
+    // own upstream budget, so slow gateways had their client connection dropped
+    // mid-retry and callers saw an empty reply instead of content or a 502.
+    it("defaults to longer than the full upstream retry budget", () => {
+      process.env.HTTP_REQUEST_TIMEOUT_MS = "30000";
+      process.env.RETRY_ATTEMPTS = "3";
+      const config = loadConfig();
+
+      expect(config.server.idleTimeoutSec).toBeGreaterThan(30 * 3);
+      expect(config.server.idleTimeoutSec).toBeLessThanOrEqual(255);
+    });
+
+    it("scales with the configured upstream timeout and retries", () => {
+      process.env.HTTP_REQUEST_TIMEOUT_MS = "5000";
+      process.env.RETRY_ATTEMPTS = "2";
+      const config = loadConfig();
+
+      expect(config.server.idleTimeoutSec).toBe(25);
+    });
+
+    it("caps at Bun's 255 second maximum", () => {
+      process.env.HTTP_REQUEST_TIMEOUT_MS = "300000";
+      process.env.RETRY_ATTEMPTS = "10";
+      const config = loadConfig();
+
+      expect(config.server.idleTimeoutSec).toBe(255);
+      expect(() => validateConfig(config)).not.toThrow();
+    });
+
+    it("honors an explicit SERVER_IDLE_TIMEOUT_SEC override", () => {
+      process.env.SERVER_IDLE_TIMEOUT_SEC = "42";
+      const config = loadConfig();
+      expect(config.server.idleTimeoutSec).toBe(42);
+    });
+
+    it("rejects a value above Bun's maximum", () => {
+      const config = createValidConfig({
+        server: { ...createValidConfig().server, idleTimeoutSec: 256 },
+      });
+      expect(() => validateConfig(config)).toThrow(/SERVER_IDLE_TIMEOUT_SEC/);
+    });
+
+    it("rejects a value below 1", () => {
+      const config = createValidConfig({
+        server: { ...createValidConfig().server, idleTimeoutSec: 0 },
+      });
+      expect(() => validateConfig(config)).toThrow(/SERVER_IDLE_TIMEOUT_SEC/);
+    });
   });
 
   it("falls back ROOT_HOST_CONTENT to ARNS_ROOT_HOST", () => {

@@ -182,6 +182,23 @@ async function main() {
     await services.blocklistService.initialize();
   }
 
+  // Bun caps idleTimeout at 255s. If the configured upstream budget exceeds
+  // that, slow gateways can still have their client connection dropped
+  // mid-retry, so say so rather than letting it truncate silently.
+  const upstreamBudgetSec =
+    (config.http.requestTimeoutMs * config.routing.retryAttempts) / 1000;
+  if (upstreamBudgetSec > config.server.idleTimeoutSec) {
+    logger.warn(
+      "Upstream retry budget exceeds the server idle timeout; slow gateways may have their client connection dropped before a response is sent",
+      {
+        upstreamBudgetSec,
+        idleTimeoutSec: config.server.idleTimeoutSec,
+        httpRequestTimeoutMs: config.http.requestTimeoutMs,
+        retryAttempts: config.routing.retryAttempts,
+      },
+    );
+  }
+
   // Start server first - don't block on ping service
   // The temperature cache works fine without ping data (uses default scores)
   // and will improve as ping data populates in the background
@@ -191,6 +208,9 @@ async function main() {
     },
     port: config.server.port,
     hostname: config.server.host,
+    // Must outlast the upstream gateway budget, or Bun drops the client
+    // connection mid-retry and the caller sees an empty reply.
+    idleTimeout: config.server.idleTimeoutSec,
   });
 
   const displayHost = (host: string) =>

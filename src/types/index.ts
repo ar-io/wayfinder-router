@@ -106,6 +106,16 @@ export interface RouterConfig {
      * Empty string = disabled (404 on /graphql).
      */
     graphqlProxyUrl: string;
+    /**
+     * Bun.serve idleTimeout, in seconds.
+     *
+     * Bun defaults this to 10s, which is shorter than the router's own upstream
+     * budget (HTTP_REQUEST_TIMEOUT_MS, retried RETRY_ATTEMPTS times). A slow
+     * gateway would then have its client connection dropped mid-flight, so the
+     * client saw an empty reply instead of the content or a proper 502.
+     * Defaults to the upstream budget plus headroom, capped at Bun's 255s max.
+     */
+    idleTimeoutSec: number;
   };
 
   mode: {

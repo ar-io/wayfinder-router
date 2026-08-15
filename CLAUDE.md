@@ -224,7 +224,7 @@ Router management endpoints (public port) are under the `/wayfinder/` prefix:
 | `/wayfinder/health` | Health check |
 | `/ar-io/healthcheck` | Health check (API Guard compatible alias) |
 | `/wayfinder/ready` | Readiness check |
-| `/wayfinder/metrics` | Prometheus metrics |
+| `/wayfinder/metrics` | Prometheus metrics (see Observability below) |
 | `/wayfinder/info` | Router info and configuration |
 | `/wayfinder/stats/gateways` | Gateway performance statistics |
 | `/wayfinder/stats/gateways/list` | List all tracked gateways |
@@ -283,6 +283,34 @@ All configuration via environment variables. See `.env.example` for full list. K
 - `ROOT_HOST_CONTENT` - Content to serve at root domain (ArNS name or txId, auto-detected). Backwards compatible with `ARNS_ROOT_HOST`.
 - `RESTRICT_TO_ROOT_HOST` - When `true`, blocks subdomain and txId path requests (404), only serves root domain content.
 - `GRAPHQL_PROXY_URL` - When set, `/graphql` proxies to this upstream GraphQL endpoint.
+
+## Observability
+
+Two distinct families of gateway metrics on `/wayfinder/metrics` — conflating them
+is easy and misleading:
+
+- **`wayfinder_router_gateways_*`** count entries in the *gateway health cache*.
+  It is populated lazily: a gateway appears only once it has actually been
+  contacted on a cache miss, or via the ping service (which only runs under the
+  `temperature` strategy). These read `0` on a freshly started router, and stay
+  `0` while responses come from cache or via the manifest/verification path.
+  **This is not the registry size.**
+- **`wayfinder_router_network_*`** describe the ar.io network registry itself
+  (`NetworkGatewayManager`). Emitted only when `ROUTING_GATEWAY_SOURCE=network`,
+  so the absence of these series is itself meaningful.
+
+`NetworkGatewayManager` degrades silently by design — a failed registry fetch
+falls back to a stale cache or hardcoded gateways and keeps serving. The
+alertable signal for that is:
+
+```
+wayfinder_router_network_using_fallback 1
+```
+
+`/wayfinder/health` also reports `degraded: true` with a reason in this state.
+It deliberately stays `200`, and `/wayfinder/ready` stays ready, because a
+degraded router still serves verified content — failing readiness would pull a
+working node out of rotation.
 
 ## Reference Docs
 

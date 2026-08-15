@@ -397,6 +397,7 @@ export function createServer(options: CreateServerOptions) {
     logger,
     startTime,
     version: ROUTER_VERSION,
+    networkGatewayManager,
   };
 
   // All router endpoints are under /wayfinder/ prefix

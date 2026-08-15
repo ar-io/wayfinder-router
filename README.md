@@ -328,6 +328,7 @@ All configuration is via environment variables. See [.env.example](.env.example)
 | `ROOT_HOST_CONTENT`     | _(empty)_   | ArNS name or txId to serve at root domain |
 | `RESTRICT_TO_ROOT_HOST` | `false`     | Only serve root domain content            |
 | `GRAPHQL_PROXY_URL`     | _(empty)_   | Upstream GraphQL endpoint                 |
+| `SERVER_IDLE_TIMEOUT_SEC` | _(derived)_ | Idle connection timeout, 1–255s. Defaults to the upstream retry budget (`HTTP_REQUEST_TIMEOUT_MS` × `RETRY_ATTEMPTS`) plus headroom. Usually leave unset |
 
 ### Mode
 

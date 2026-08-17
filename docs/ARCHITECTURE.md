@@ -98,6 +98,8 @@ Where content is fetched from. Configured via `ROUTING_GATEWAY_SOURCE`:
 | `trusted-ario` | Specific trusted ar.io gateways |
 | `static` | Manually configured gateway URLs |
 
+With `network`, `NetworkGatewayManager` fetches the registry over Solana RPC and refreshes it on an interval. It **degrades silently by design**: a failed fetch keeps the last good list, or falls back to a small hardcoded set, so the router keeps serving rather than failing requests. Because that failure is invisible in the request path, it is surfaced through `wayfinder_router_network_using_fallback` and a `degraded` flag on `/wayfinder/health` — see [OPERATIONS.md](OPERATIONS.md#alert-on-a-degraded-gateway-registry).
+
 ### Verification Gateways
 
 Who to trust for hash verification. Configured via `VERIFICATION_GATEWAY_SOURCE`:

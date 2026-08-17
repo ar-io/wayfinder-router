@@ -165,6 +165,27 @@ curl http://localhost:3000/wayfinder/metrics
 
 Exposes standard metrics for scraping by Prometheus. Configure scrape targets to point at `/wayfinder/metrics`.
 
+#### Alert on a degraded gateway registry
+
+The router degrades silently by design: if it cannot fetch the gateway registry from the ar.io network, it keeps serving from a stale cache or a small hardcoded fallback list. Requests still succeed, so nothing in the request path looks wrong. Alert on it:
+
+```
+wayfinder_router_network_using_fallback == 1  for 15m
+```
+
+`/wayfinder/health` also reports `degraded: true` with a reason in this state. It deliberately stays `200`, and `/wayfinder/ready` stays ready, because a degraded router still serves verified content — failing readiness would pull a working node out of rotation over a registry blip.
+
+#### Two families of gateway metrics
+
+These are easy to confuse, and the distinction matters when writing alerts:
+
+| Prefix | Meaning |
+| ------ | ------- |
+| `wayfinder_router_network_*` | The ar.io network **registry** — its size, fetch successes/failures, cache age, and whether the fallback list is in use. Emitted only when `ROUTING_GATEWAY_SOURCE=network`, so their absence is meaningful |
+| `wayfinder_router_gateways_*` | The gateway **health cache** — populated lazily, so a gateway appears only once it has actually been contacted on a cache miss (or pinged, which only runs under the `temperature` strategy) |
+
+`wayfinder_router_gateways_total` therefore reads `0` on a freshly started router and stays `0` while responses are served from cache. **It is not the registry size** — use `wayfinder_router_network_gateways_total` for that.
+
 ### Gateway Statistics
 
 ```bash
